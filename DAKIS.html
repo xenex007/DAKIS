@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>DAKIS by XeneX - Assistant IA</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            --bg-primary: #eef2f5;
+            --bg-secondary: #f0f4f8;
+            --bg-sidebar: linear-gradient(180deg, #1a2f3d 0%, #2d3e4b 100%);
+            --text-primary: #1e2a32;
+            --text-sidebar: #eef2f5;
+            --accent: #e8b55a;
+            --accent-hover: #f4c430;
+            --border-light: #dce5ec;
+            --bubble-user: linear-gradient(135deg, #e8b55a 0%, #f4c430 100%);
+            --bubble-bot: #ffffff;
+            --input-bg: #fafdff;
+            --danger: #5c3e3e;
+            --danger-hover: #9b5a5a;
+            --success: #27ae60;
+            --shadow: rgba(0,0,0,0.05);
+        }
+
+        body.theme-cyber {
+            --bg-primary: #020509;
+            --bg-secondary: #050d18;
+            --bg-sidebar: linear-gradient(180deg, #0a0f1a 0%, #0d1525 100%);
+            --text-primary: #00e5ff;
+            --text-sidebar: #00e5ff;
+            --accent: #00ff9d;
+            --accent-hover: #00ff9d;
+            --border-light: #1a3455;
+            --bubble-user: linear-gradient(135deg, #00e5ff22, #00ff9d11);
+            --bubble-bot: #0d1e33;
+            --input-bg: #091525;
+            --danger: #ff3366;
+            --danger-hover: #ff6680;
+            --success: #00ff9d;
+            --shadow: rgba(0,229,255,0.1);
+        }
+
+        body.theme-midnight {
+            --bg-primary: #09090f;
+            --bg-secondary: #0d0d18;
+            --bg-sidebar: linear-gradient(180deg, #0a0a14 0%, #0f0f1d 100%);
+            --text-primary: #9b8fff;
+            --text-sidebar: #9b8fff;
+            --accent: #ff8aff;
+            --accent-hover: #ffaaff;
+            --border-light: #252540;
+            --bubble-user: linear-gradient(135deg, #9b8fff33, #ff8aff22);
+            --bubble-bot: #131320;
+            --input-bg: #0d0d18;
+            --danger: #ff6b6b;
+            --danger-hover: #ff8e8e;
+            --success: #6bffb0;
+            --shadow: rgba(155,143,255,0.1);
+        }
+
+        body.theme-glass {
+            --bg-primary: rgba(255,255,255,0.92);
+            --bg-secondary: rgba(240,244,248,0.88);
+            --bg-sidebar: linear-gradient(135deg, rgba(26,47,61,0.85), rgba(45,62,75,0.9));
+            --text-primary: #1e2a32;
+            --text-sidebar: #ffffff;
+            --accent: #4a90e2;
+            --accent-hover: #5ba3f5;
+            --border-light: rgba(255,255,255,0.3);
+            --bubble-user: linear-gradient(135deg, #4a90e2, #5ba3f5);
+            --bubble-bot: rgba(255,255,255,0.85);
+            --input-bg: rgba(255,255,255,0.9);
+            --danger: #e74c3c;
+            --danger-hover: #ec7063;
+            --success: #2ecc71;
+            --shadow: rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        body.theme-apple {
+            --bg-primary: #f5f5f7;
+            --bg-secondary: #ffffff;
+            --bg-sidebar: linear-gradient(180deg, #ffffff 0%, #f5f5f7 100%);
+            --text-primary: #1d1c1f;
+            --text-sidebar: #1d1c1f;
+            --accent: #007aff;
+            --accent-hover: #0051d5;
+            --border-light: #e9e9ef;
+            --bubble-user: #007aff;
+            --bubble-bot: #e9e9ef;
+            --input-bg: #ffffff;
+            --danger: #ff3b30;
+            --danger-hover: #ff6b62;
+            --success: #34c759;
+            --shadow: rgba(0,0,0,0.05);
+        }
+
+        body.theme-velvet {
+            --bg-primary: #1a0b2e;
+            --bg-secondary: #2d1b4e;
+            --bg-sidebar: linear-gradient(180deg, #2d1b4e 0%, #1a0b2e 100%);
+            --text-primary: #e8d5ff;
+            --text-sidebar: #ffd700;
+            --accent: #c77dff;
+            --accent-hover: #dd9eff;
+            --border-light: #5a3a8a;
+            --bubble-user: linear-gradient(135deg, #c77dff, #a855f7);
+            --bubble-bot: #3a2a5a;
+            --input-bg: #2d1b4e;
+            --danger: #ff6b9d;
+            --danger-hover: #ff8db3;
+            --success: #ffd700;
+            --shadow: rgba(199,125,255,0.2);
+        }
+
+        body.theme-contrast {
+            --bg-primary: #000000;
+            --bg-secondary: #000000;
+            --bg-sidebar: #000000;
+            --text-primary: #ffff00;
+            --text-sidebar: #ffff00;
+            --accent: #00ff00;
+            --accent-hover: #00ff88;
+            --border-light: #ffff00;
+            --bubble-user: #00ff00;
+            --bubble-bot: #000000;
+            --input-bg: #000000;
+            --danger: #ff0000;
+            --danger-hover: #ff4444;
+            --success: #00ff00;
+            --shadow: none;
+            border: 2px solid #ffff00;
+        }
+        body.theme-contrast button,
+        body.theme-contrast .bubble,
+        body.theme-contrast input,
+        body.theme-contrast textarea {
+            border: 2px solid #ffff00 !important;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            height: 100vh;
+            overflow: hidden;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100%;
+            width: 100%;
+            background: var(--bg-secondary);
+        }
+
+        /* ========= SIDEBAR — SCROLL FIX ========= */
+        .sidebar {
+            width: 320px;
+            min-width: 320px;
+            background: var(--bg-sidebar);
+            color: var(--text-sidebar);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease;
+            box-shadow: 2px 0 12px var(--shadow);
+            z-index: 10;
+            /* Critical scroll fix */
+            max-height: 100vh;
+            height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* Modern, non-intrusive scrollbar — visible on hover */
+        .sidebar::-webkit-scrollbar {
+            width: 5px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .sidebar:hover::-webkit-scrollbar {
+            opacity: 1;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 4px;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(232, 181, 90, 0.5);
+            border-radius: 4px;
+            transition: background 0.2s ease;
+        }
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+        /* Firefox scrollbar */
+        .sidebar {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(232, 181, 90, 0.4) rgba(0, 0, 0, 0.15);
+        }
+
+        /* ===== FIX #1 — DAKIS LOGO: ORANGE GRADIENT + BLACK OUTLINE ===== */
+        .dakis-logo-container {
+            background: transparent;
+            text-align: center;
+            padding: 1.5rem 1rem 1.2rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            /* Prevent shrinking when siblings expand */
+            flex-shrink: 0;
+        }
+
+        .logo-dakis {
+            font-family: 'Orbitron', 'Montserrat', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 900;
+            letter-spacing: 4px;
+            /* Orange gradient fill */
+            background: linear-gradient(135deg, #ff3b00 0%, #ff7400 50%, #ff9d00 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+            /* Heavy black outline for legibility against dark backgrounds.
+               We stack multiple text-shadows at tiny offsets to simulate a solid stroke
+               because text-shadow does NOT interact with -webkit-text-fill-color.
+               We use paint-order trick + a wrapper to get both gradient fill and outline. */
+            filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 1px #000);
+            display: inline-block;
+            position: relative;
+        }
+
+        /* Pseudo-element renders the black outline beneath the gradient text */
+        .logo-dakis::before {
+            content: 'DAKIS';
+            position: absolute;
+            inset: 0;
+            font-family: 'Orbitron', 'Montserrat', sans-serif;
+            font-size: inherit;
+            font-weight: 900;
+            letter-spacing: inherit;
+            /* Stroke only, drawn behind */
+            -webkit-text-stroke: 3px #000000;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+            background: none;
+            z-index: -1;
+        }
+
+        .logo-arabic {
+            font-family: 'Cairo', 'Almarai', 'Tajawal', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #ffb347;
+            text-shadow: 1px 1px 0 #000000, -1px -1px 0 #000000, 0 1px 0 #000000;
+            letter-spacing: 1px;
+            margin-top: 6px;
+            display: block;
+        }
+
+        .logo-by {
+            font-family: 'Orbitron', 'Montserrat', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: #d4a373;
+            text-shadow: 1px 1px 0 #000000;
+            letter-spacing: 1px;
+            margin-top: 4px;
+            display: block;
+        }
+
+        /* ===== FIX #2 — ALL SIDEBAR BLOCKS: flex-shrink: 0 + smooth transitions ===== */
+        .theme-selector {
+            margin: 1rem;
+            padding: 8px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .theme-selector select {
+            width: 100%;
+            padding: 10px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .settings-toggle {
+            background: var(--accent);
+            border: none;
+            margin: 0 1rem 0;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            color: #1f2e38;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+            width: calc(100% - 2rem);
+        }
+
+        .settings-toggle:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.05);
+        }
+
+        /* ===== CONFIG PANEL — smooth expand, pushes siblings ===== */
+        .config-panel {
+            /* max-height animation: collapsed → 0, expanded → auto via large value */
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                        padding 0.3s ease,
+                        opacity 0.3s ease;
+            background: rgba(0,0,0,0.2);
+            opacity: 0;
+            /* Sits between toggle and agents section; margin handles breathing room */
+            margin: 0 0;
+            border-radius: 0;
+            flex-shrink: 0;
+        }
+
+        .config-panel.open {
+            max-height: 700px; /* large enough to never clip content */
+            opacity: 1;
+            overflow: visible;
+            /* Extra bottom margin so agents section is pushed down clearly */
+            margin-bottom: 0.5rem;
+        }
+
+        .config-section {
+            padding: 1.2rem;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .config-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: block;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .provider-badge {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .provider-badge:hover {
+            border-color: var(--accent);
+        }
+
+        .provider-info {
+            flex: 1;
+        }
+
+        .provider-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .provider-limit {
+            font-size: 0.65rem;
+            opacity: 0.7;
+        }
+
+        .key-status {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 20px;
+            background: #3b5c6e;
+            font-weight: 600;
+        }
+
+        .key-status.active {
+            background: var(--success);
+            color: white;
+        }
+
+        .change-key-btn {
+            background: transparent;
+            border: 1px solid var(--accent);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--accent);
+            transition: all 0.2s;
+        }
+
+        .change-key-btn:hover {
+            background: var(--accent);
+            color: #1f2e38;
+        }
+
+        /* API input sub-panel — smooth slide open */
+        .hidden-api-input {
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                        opacity 0.3s ease,
+                        padding 0.3s ease;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            padding: 0 10px;
+            width: 100%;
+            margin-top: 0;
+        }
+
+        .hidden-api-input.show {
+            max-height: 200px;
+            opacity: 1;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .api-input-small {
+            width: 100%;
+            padding: 10px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+        }
+
+        .save-provider-btn {
+            background: var(--accent);
+            border: none;
+            padding: 8px;
+            border-radius: 8px;
+            width: 100%;
+            cursor: pointer;
+            font-weight: bold;
+            color: #1f2e38;
+        }
+
+        .model-select {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            padding: 10px;
+            color: var(--text-primary);
+            font-weight: 500;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        /* Spacing slot between toggle and agents — absorbs config panel expansion */
+        .config-spacer {
+            height: 0.8rem;
+            flex-shrink: 0;
+            transition: height 0.3s ease;
+        }
+
+        /* ===== AGENTS — pushed down smoothly by config expansion ===== */
+        .agents-section {
+            margin: 0 1rem 1rem;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 12px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .agents-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .agents-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .agents-list::-webkit-scrollbar { width: 4px; }
+
+        .agent-item {
+            background: rgba(0,0,0,0.3);
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .agent-item:hover { transform: translateX(3px); }
+        .agent-item.active { border-left-color: var(--accent); background: rgba(0,0,0,0.4); }
+        .agent-name { font-weight: 600; font-size: 0.85rem; }
+        .agent-desc { font-size: 0.7rem; opacity: 0.7; }
+
+        .memory-section {
+            margin: 0 1rem 1rem;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 12px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .memory-list {
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 0.75rem;
+            margin-bottom: 8px;
+        }
+
+        .memory-list::-webkit-scrollbar { width: 4px; }
+
+        .memory-item {
+            padding: 5px 0;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .memory-input-row {
+            display: flex;
+            gap: 5px;
+            margin-top: 8px;
+        }
+
+        .memory-input-row input {
+            flex: 1;
+            padding: 6px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            color: var(--text-primary);
+        }
+
+        .history-list {
+            padding: 0.8rem;
+            overflow-y: auto;
+            /* History can grow/shrink freely; min-height prevents total collapse */
+            min-height: 60px;
+            flex-shrink: 1;
+        }
+
+        .history-list::-webkit-scrollbar { width: 4px; }
+
+        .history-item {
+            background: rgba(0,0,0,0.2);
+            margin-bottom: 10px;
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .history-item:hover { transform: translateX(3px); }
+        .history-item.active { border-left-color: var(--accent); }
+        .history-title { font-weight: 600; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .history-date { font-size: 0.7rem; opacity: 0.6; }
+
+        .new-chat-btn, .wizard-agent-btn {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+            border: none;
+            margin: 0.8rem 1rem;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 700;
+            color: #1f2e38;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .new-chat-btn:hover, .wizard-agent-btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
+
+        .clear-all-btn {
+            background: var(--danger);
+            border: none;
+            margin: 0 1rem 1.5rem;
+            padding: 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .clear-all-btn:hover { filter: brightness(1.15); }
+
+        /* ========= MAIN CHAT ========= */
+        .main-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-secondary);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: var(--bg-primary);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .chat-header h3 span { color: var(--accent); }
+
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .messages-area::-webkit-scrollbar { width: 6px; }
+        .messages-area::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 3px; }
+        .messages-area::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+
+        .message {
+            max-width: 85%;
+            display: flex;
+            flex-direction: column;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .user-message { align-self: flex-end; }
+        .bot-message { align-self: flex-start; }
+
+        .bubble {
+            padding: 1rem 1.4rem;
+            border-radius: 20px;
+            line-height: 1.5;
+            font-size: 0.95rem;
+            word-wrap: break-word;
+        }
+        .user-bubble { background: var(--bubble-user); color: #1f2e38; border-bottom-right-radius: 6px; }
+        .bot-bubble { background: var(--bubble-bot); color: var(--text-primary); border-bottom-left-radius: 6px; border: 1px solid var(--border-light); }
+
+        .msg-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 6px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .message:hover .msg-actions { opacity: 1; }
+        .msg-action-btn {
+            background: transparent;
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+        .msg-action-btn:hover { background: var(--accent); color: #1f2e38; }
+
+        .typing-indicator {
+            padding: 10px 20px;
+            background: var(--bubble-bot);
+            border-radius: 20px;
+            display: inline-block;
+            border: 1px solid var(--border-light);
+        }
+        .typing-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            margin: 0 2px;
+            animation: typing 1.4s infinite;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-10px); opacity: 1; } }
+
+        .input-panel {
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border-light);
+            padding: 1.5rem 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .drag-drop-zone {
+            border: 2px dashed var(--border-light);
+            border-radius: 16px;
+            padding: 12px 20px;
+            background: var(--input-bg);
+            text-align: center;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .drag-drop-zone:hover { border-color: var(--accent); background: rgba(0,0,0,0.05); }
+
+        .file-badge {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            padding: 8px 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            border: 1px solid var(--border-light);
+        }
+        .remove-file { cursor: pointer; font-weight: bold; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--danger); color: white; }
+
+        .message-input-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+        .chat-input {
+            flex: 1;
+            border: 2px solid var(--border-light);
+            border-radius: 24px;
+            padding: 14px 20px;
+            resize: none;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            background: var(--input-bg);
+            color: var(--text-primary);
+        }
+        .chat-input:focus { border-color: var(--accent); }
+
+        .voice-btn, .send-btn {
+            background: var(--accent);
+            border: none;
+            border-radius: 24px;
+            padding: 14px 20px;
+            color: #1f2e38;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+        .voice-btn { background: var(--danger); color: white; }
+        .voice-btn.recording { animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .voice-btn:hover, .send-btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
+
+        .status-msg { font-size: 0.8rem; text-align: center; min-height: 20px; }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: var(--bg-primary);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 20px;
+            border: 1px solid var(--border-light);
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                height: 100%;
+                width: 280px;
+                min-width: 280px;
+                transform: translateX(-100%);
+                z-index: 100;
+            }
+            .sidebar.open { transform: translateX(0); }
+            .message { max-width: 95%; }
+            .messages-area { padding: 1rem; }
+            .input-panel { padding: 1rem; }
+            .burger-btn {
+                display: block;
+                position: fixed;
+                top: 10px;
+                left: 10px;
+                z-index: 101;
+                background: var(--accent);
+                border: none;
+                border-radius: 50%;
+                width: 44px;
+                height: 44px;
+                font-size: 24px;
+                cursor: pointer;
+                color: #1f2e38;
+            }
+        }
+        .burger-btn { display: none; }
+        @media (max-width: 768px) { .burger-btn { display: block; } }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <button class="burger-btn" id="burgerBtn">☰</button>
+    <div class="sidebar" id="sidebar">
+
+        <!-- LOGO -->
+        <div class="dakis-logo-container">
+            <div class="logo-dakis">DAKIS</div>
+            <div class="logo-arabic">الذكاء الإصطناعي</div>
+            <div class="logo-by">by XeneX</div>
+        </div>
+
+        <!-- THÈME — sits above config panel, gets pushed upward when panel opens (sidebar scrolls) -->
+        <div class="theme-selector">
+            <label class="config-label">🎨 Thème</label>
+            <select id="themeSelect">
+                <option value="theme-dakis">DAKIS Original</option>
+                <option value="theme-cyber">Cyber</option>
+                <option value="theme-midnight">Midnight</option>
+                <option value="theme-glass">Glass</option>
+                <option value="theme-apple">Apple Épuré</option>
+                <option value="theme-velvet">Velvet</option>
+                <option value="theme-contrast">Haut Contraste</option>
+            </select>
+        </div>
+
+        <!-- SETTINGS TOGGLE -->
+        <button id="settingsToggle" class="settings-toggle">⚙️ Paramètres API</button>
+
+        <!-- CONFIG PANEL — expands and pushes agents downward -->
+        <div id="configPanel" class="config-panel">
+            <div class="config-section">
+                <label class="config-label">🔑 Clés API Gratuites</label>
+                <div id="providersContainer"></div>
+            </div>
+            <div class="config-section">
+                <label class="config-label">🤖 Modèle</label>
+                <select id="modelSelect" class="model-select"></select>
+            </div>
+        </div>
+
+        <!-- Breathing room between config panel and agents -->
+        <div class="config-spacer"></div>
+
+        <!-- AGENTS IA — pushed down when config panel opens -->
+        <div class="agents-section">
+            <div class="agents-header">
+                <label class="config-label" style="margin:0;">🧠 Agents IA</label>
+                <button id="wizardAgentBtn" class="change-key-btn" style="padding:4px 10px;">✨ Wizard</button>
+            </div>
+            <div id="agentsList" class="agents-list"></div>
+        </div>
+
+        <div class="memory-section">
+            <label class="config-label">💾 Mémoire Globale</label>
+            <div id="memoryList" class="memory-list"></div>
+            <div class="memory-input-row">
+                <input type="text" id="memoryInput" placeholder="Ajouter un souvenir...">
+                <button id="memoryAddBtn" class="change-key-btn" style="padding:4px 10px;">+</button>
+            </div>
+        </div>
+
+        <button id="newChatBtn" class="new-chat-btn">➕ Nouvelle Discussion</button>
+
+        <div class="history-list" id="historyList"></div>
+
+        <button id="clearAllHistoryBtn" class="clear-all-btn">🗑️ Effacer l'historique</button>
+    </div>
+
+    <div class="main-chat">
+        <div class="chat-header">
+            <h3><span>DAKIS</span> by XeneX</h3>
+        </div>
+
+        <div class="messages-area" id="messagesContainer"></div>
+
+        <div class="input-panel">
+            <div id="dragDropZone" class="drag-drop-zone">
+                📎 Glissez un fichier (PDF, Image, .docx) ou <span style="color:var(--accent);">parcourir</span>
+                <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg,.docx" style="display:none;">
+            </div>
+            <div id="filePreview"></div>
+            <div class="message-input-row">
+                <textarea id="userInput" class="chat-input" rows="2" placeholder="Votre message pour DAKIS..."></textarea>
+                <button id="voiceBtn" class="voice-btn" title="Dictée vocale">🎤</button>
+                <button id="sendButton" class="send-btn">Envoyer</button>
+            </div>
+            <div id="statusMsg" class="status-msg"></div>
+        </div>
+    </div>
+</div>
+
+<div id="wizardModal" class="modal-overlay">
+    <div class="modal-box">
+        <h3 style="margin-bottom:15px;">✨ Création d'agent assistée</h3>
+        <label class="config-label">📝 Décrivez l'agent souhaité</label>
+        <textarea id="wizardDesc" rows="4" style="width:100%;padding:10px;background:var(--input-bg);border:1px solid var(--border-light);border-radius:8px;color:var(--text-primary);" placeholder="Ex: Un traducteur technique spécialisé en documents juridiques anglais→français, avec un style formel et précis"></textarea>
+        <div style="display:flex;gap:10px;margin-top:15px;">
+            <button id="wizardGenerateBtn" class="send-btn" style="flex:1;">🚀 Générer l'agent</button>
+            <button id="wizardCloseBtn" class="voice-btn" style="flex:0.3;">Annuler</button>
+        </div>
+        <div id="wizardResult" style="margin-top:15px;display:none;"></div>
+    </div>
+</div>
+
+<script>
+    const providersConfig = {
+        mistral: { name: "Mistral AI", baseURL: "https://api.mistral.ai/v1/chat/completions", models: ["mistral-tiny", "mistral-small", "mistral-medium", "mistral-large-latest"], freeLimit: "~200 req/jour", signupUrl: "https://console.mistral.ai", headers: (key) => ({ "Authorization": `Bearer ${key}`, "Content-Type": "application/json" }) },
+        groq: { name: "Groq", baseURL: "https://api.groq.com/openai/v1/chat/completions", models: ["llama-3.1-70b-versatile", "mixtral-8x7b-32768"], freeLimit: "Très généreux", signupUrl: "https://console.groq.com", headers: (key) => ({ "Authorization": `Bearer ${key}`, "Content-Type": "application/json" }) },
+        deepseek: { name: "DeepSeek", baseURL: "https://api.deepseek.com/v1/chat/completions", models: ["deepseek-chat"], freeLimit: "Généreux", signupUrl: "https://platform.deepseek.com", headers: (key) => ({ "Authorization": `Bearer ${key}`, "Content-Type": "application/json" }) },
+        openrouter: { name: "OpenRouter", baseURL: "https://openrouter.ai/api/v1/chat/completions", models: ["openrouter/free", "deepseek/deepseek-chat"], freeLimit: "Illimité", signupUrl: "https://openrouter.ai", headers: (key) => ({ "Authorization": `Bearer ${key}`, "Content-Type": "application/json" }) }
+    };
+
+    let currentApiKeys = {};
+    let activeProvider = "mistral";
+    let currentSessionId = Date.now().toString();
+    let sessions = [];
+    let attachedFile = null;
+    let agents = [];
+    let globalMemories = [];
+    let currentAgent = null;
+
+    const burgerBtn = document.getElementById('burgerBtn');
+    const sidebar = document.getElementById('sidebar');
+    const settingsToggle = document.getElementById('settingsToggle');
+    const configPanel = document.getElementById('configPanel');
+    const providersContainer = document.getElementById('providersContainer');
+    const modelSelect = document.getElementById('modelSelect');
+    const newChatBtn = document.getElementById('newChatBtn');
+    const clearAllHistoryBtn = document.getElementById('clearAllHistoryBtn');
+    const historyListDiv = document.getElementById('historyList');
+    const messagesContainer = document.getElementById('messagesContainer');
+    const userInput = document.getElementById('userInput');
+    const sendButton = document.getElementById('sendButton');
+    const dragZone = document.getElementById('dragDropZone');
+    const fileInput = document.getElementById('fileInput');
+    const filePreviewDiv = document.getElementById('filePreview');
+    const statusMsgSpan = document.getElementById('statusMsg');
+    const voiceBtn = document.getElementById('voiceBtn');
+    const themeSelect = document.getElementById('themeSelect');
+    const agentsListDiv = document.getElementById('agentsList');
+    const memoryListDiv = document.getElementById('memoryList');
+    const memoryInput = document.getElementById('memoryInput');
+    const memoryAddBtn = document.getElementById('memoryAddBtn');
+    const wizardAgentBtn = document.getElementById('wizardAgentBtn');
+    const wizardModal = document.getElementById('wizardModal');
+    const wizardDesc = document.getElementById('wizardDesc');
+    const wizardGenerateBtn = document.getElementById('wizardGenerateBtn');
+    const wizardCloseBtn = document.getElementById('wizardCloseBtn');
+    const wizardResult = document.getElementById('wizardResult');
+
+    function setStatus(msg, isError = false) {
+        statusMsgSpan.innerHTML = msg;
+        statusMsgSpan.style.color = isError ? "#e74c3c" : "var(--success)";
+        setTimeout(() => { if (statusMsgSpan.innerHTML === msg) statusMsgSpan.innerHTML = ""; }, 5000);
+    }
+
+    function escapeHtml(str) { return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[m]); }
+
+    function setTheme(themeName) {
+        document.body.className = '';
+        document.body.classList.add(themeName);
+        localStorage.setItem('dakis_theme', themeName);
+    }
+
+    themeSelect.addEventListener('change', () => setTheme(themeSelect.value));
+    const savedTheme = localStorage.getItem('dakis_theme');
+    if (savedTheme) { setTheme(savedTheme); themeSelect.value = savedTheme; }
+    else themeSelect.value = 'theme-dakis';
+
+    if (burgerBtn) burgerBtn.onclick = () => sidebar.classList.toggle('open');
+
+    settingsToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const isOpen = configPanel.classList.toggle('open');
+        settingsToggle.innerHTML = isOpen ? '🔼 Masquer Paramètres' : '⚙️ Paramètres API';
+        // After transition completes, scroll so the toggle + panel are visible
+        setTimeout(() => {
+            if (isOpen) {
+                settingsToggle.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 420); // slightly after the 0.4s CSS transition
+    });
+
+    function loadApiKeys() { const saved = localStorage.getItem('dakis_keys'); if (saved) { try { currentApiKeys = JSON.parse(saved); } catch (e) {} } renderProvidersUI(); updateModelSelect(); }
+    function saveApiKeys() { localStorage.setItem('dakis_keys', JSON.stringify(currentApiKeys)); }
+
+    function renderProvidersUI() {
+        providersContainer.innerHTML = '';
+        for (const [provider, conf] of Object.entries(providersConfig)) {
+            const hasKey = currentApiKeys[provider] && currentApiKeys[provider].length > 0;
+            const div = document.createElement('div');
+            div.className = 'provider-badge';
+            div.innerHTML = `
+                <div class="provider-info">
+                    <div class="provider-name">${conf.name}</div>
+                    <div class="provider-limit">${conf.freeLimit}</div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <div class="key-status ${hasKey ? 'active' : ''}">${hasKey ? '✓' : '○'}</div>
+                    <button class="change-key-btn" data-provider="${provider}">${hasKey ? 'Modifier' : 'Ajouter'}</button>
+                </div>
+                <div class="hidden-api-input" id="input-${provider}">
+                    <input type="password" id="key-${provider}" class="api-input-small" placeholder="Clé API ${conf.name}">
+                    <a href="${conf.signupUrl}" target="_blank" style="display:block;font-size:0.7rem;color:var(--accent);margin-bottom:8px;">→ Obtenir une clé gratuite</a>
+                    <button class="save-provider-btn" data-save="${provider}">💾 Sauvegarder</button>
+                </div>
+            `;
+            providersContainer.appendChild(div);
+
+            const changeBtn = div.querySelector('.change-key-btn');
+            const inputDiv = div.querySelector('.hidden-api-input');
+            changeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // Close other open inputs first
+                document.querySelectorAll('.hidden-api-input').forEach(inp => {
+                    if (inp !== inputDiv) inp.classList.remove('show');
+                });
+                inputDiv.classList.toggle('show');
+                if (inputDiv.classList.contains('show')) {
+                    setTimeout(() => {
+                        inputDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 360);
+                }
+            });
+
+            const saveBtn = div.querySelector('.save-provider-btn');
+            const keyInput = div.querySelector(`#key-${provider}`);
+            saveBtn.addEventListener('click', () => {
+                const newKey = keyInput.value.trim();
+                if (newKey) {
+                    currentApiKeys[provider] = newKey;
+                    saveApiKeys();
+                    setStatus(`✅ Clé ${conf.name} sauvegardée`);
+                    inputDiv.classList.remove('show');
+                    keyInput.value = '';
+                    renderProvidersUI();
+                    updateModelSelect();
+                } else {
+                    setStatus(`❌ Clé invalide`, true);
+                }
+            });
+        }
+    }
+
+    function updateModelSelect() {
+        modelSelect.innerHTML = '<option value="">Choisir un modèle...</option>';
+        for (const [provider, conf] of Object.entries(providersConfig)) {
+            if (currentApiKeys[provider]) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = conf.name;
+                conf.models.forEach(model => {
+                    const opt = document.createElement('option');
+                    opt.value = model; opt.textContent = model; opt.dataset.provider = provider;
+                    optgroup.appendChild(opt);
+                });
+                modelSelect.appendChild(optgroup);
+            }
+        }
+        if (modelSelect.options.length > 1 && modelSelect.options[1]) modelSelect.selectedIndex = 1;
+    }
+
+    function getProviderForModel(model) {
+        for (const [provider, conf] of Object.entries(providersConfig)) if (conf.models.includes(model)) return provider;
+        return activeProvider;
+    }
+
+    function loadAgents() { const saved = localStorage.getItem('dakis_agents'); if (saved) { try { agents = JSON.parse(saved); } catch (e) {} } renderAgents(); }
+    function saveAgents() { localStorage.setItem('dakis_agents', JSON.stringify(agents)); }
+
+    function renderAgents() {
+        if (!agentsListDiv) return;
+        agentsListDiv.innerHTML = agents.map(a => `<div class="agent-item ${currentAgent?.id === a.id ? 'active' : ''}" data-id="${a.id}"><div class="agent-name">🧠 ${escapeHtml(a.name)}</div><div class="agent-desc">${escapeHtml((a.desc || '').substring(0, 50))}...</div></div>`).join('');
+        document.querySelectorAll('.agent-item').forEach(el => el.addEventListener('click', () => {
+            const id = el.dataset.id;
+            currentAgent = agents.find(a => a.id === id) || null;
+            renderAgents();
+            setStatus(`Agent "${currentAgent?.name || 'Aucun'}" activé`);
+        }));
+    }
+
+    function loadMemory() { const saved = localStorage.getItem('dakis_memory'); if (saved) { try { globalMemories = JSON.parse(saved); } catch (e) {} } renderMemory(); }
+    function saveMemory() { localStorage.setItem('dakis_memory', JSON.stringify(globalMemories)); }
+
+    function renderMemory() {
+        if (!memoryListDiv) return;
+        memoryListDiv.innerHTML = globalMemories.slice(-10).reverse().map(m => `<div class="memory-item"><span>📌 ${escapeHtml(m.content.substring(0, 60))}</span><button onclick="window.deleteMemory('${m.id}')" style="background:none;border:none;color:var(--danger);cursor:pointer;">✕</button></div>`).join('');
+        if (!globalMemories.length) memoryListDiv.innerHTML = '<div style="opacity:0.6;">Aucun souvenir</div>';
+    }
+    window.deleteMemory = (id) => { globalMemories = globalMemories.filter(m => m.id !== id); saveMemory(); renderMemory(); };
+
+    if (memoryAddBtn) {
+        memoryAddBtn.onclick = () => {
+            const txt = memoryInput.value.trim();
+            if (txt) { globalMemories.push({ id: Date.now().toString(), content: txt, created: Date.now() }); saveMemory(); renderMemory(); memoryInput.value = ''; setStatus('Souvenir ajouté'); }
+        };
+    }
+
+    function getRelevantMemories(query, limit = 3) {
+        return globalMemories.filter(m => query.toLowerCase().includes(m.content.toLowerCase()) || m.content.toLowerCase().includes(query.toLowerCase())).slice(0, limit);
+    }
+
+    function loadSessions() {
+        const stored = localStorage.getItem('dakis_sessions');
+        if (stored) { try { sessions = JSON.parse(stored); } catch (e) {} }
+        if (!sessions.length) {
+            sessions = [{ id: Date.now().toString(), title: "Bienvenue DAKIS", messages: [{ role: "assistant", content: "🦊 **DAKIS by XeneX** opérationnel ! Configurez vos clés API dans les paramètres.", timestamp: Date.now() }], createdAt: Date.now() }];
+            saveSessions();
+        }
+        if (!sessions.find(s => s.id === currentSessionId)) currentSessionId = sessions[0].id;
+        renderHistory();
+        loadSessionMessages(currentSessionId);
+    }
+    function saveSessions() { localStorage.setItem('dakis_sessions', JSON.stringify(sessions)); }
+    function saveCurrentMessages(messages) {
+        let idx = sessions.findIndex(s => s.id === currentSessionId);
+        if (idx !== -1) {
+            sessions[idx].messages = messages;
+            let firstUser = messages.find(m => m.role === 'user');
+            if (firstUser) sessions[idx].title = firstUser.content.substring(0, 40) + (firstUser.content.length > 40 ? "…" : "");
+            saveSessions(); renderHistory();
+        }
+    }
+    function loadSessionMessages(id) { let sess = sessions.find(s => s.id === id); if (sess) { currentSessionId = id; renderMessages(sess.messages); } renderHistory(); }
+
+    function renderMessages(messages) {
+        if (!messagesContainer) return;
+        messagesContainer.innerHTML = '';
+        messages.forEach(msg => {
+            let div = document.createElement('div');
+            div.className = `message ${msg.role === 'user' ? 'user-message' : 'bot-message'}`;
+            div.innerHTML = `<div class="bubble ${msg.role === 'user' ? 'user-bubble' : 'bot-bubble'}">${msg.role === 'user' ? escapeHtml(msg.content) : marked.parse(msg.content)}</div>
+                <div class="msg-actions">${msg.role === 'assistant' ? `<button class="msg-action-btn" onclick="window.copyMessage(${msg.timestamp})">📋 Copier</button><button class="msg-action-btn" onclick="window.saveToMemory(${msg.timestamp})">🧠 Mémoriser</button>` : ''}</div>
+                <div style="font-size:0.7rem;opacity:0.6;margin-top:4px;">${new Date(msg.timestamp || Date.now()).toLocaleTimeString()}</div>`;
+            messagesContainer.appendChild(div);
+        });
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    window.copyMessage = (ts) => { let msg = sessions.find(s => s.id === currentSessionId)?.messages.find(m => m.timestamp === ts); if (msg) { navigator.clipboard.writeText(msg.content); setStatus('Copié !'); } };
+    window.saveToMemory = (ts) => { let msg = sessions.find(s => s.id === currentSessionId)?.messages.find(m => m.timestamp === ts); if (msg) { globalMemories.push({ id: Date.now().toString(), content: msg.content.substring(0, 200), created: Date.now() }); saveMemory(); renderMemory(); setStatus('Mémorisé !'); } };
+
+    function addMessage(role, content) { let sess = sessions.find(s => s.id === currentSessionId); if (sess) { sess.messages.push({ role, content, timestamp: Date.now() }); saveCurrentMessages(sess.messages); renderMessages(sess.messages); } }
+
+    function renderHistory() {
+        if (!historyListDiv) return;
+        historyListDiv.innerHTML = sessions.map(s => `<div class="history-item ${s.id === currentSessionId ? 'active' : ''}" data-id="${s.id}"><div class="history-title">🦊 ${escapeHtml(s.title || "Discussion")}</div><div class="history-date">${new Date(s.createdAt).toLocaleDateString()}</div></div>`).join('');
+        document.querySelectorAll('.history-item').forEach(el => el.addEventListener('click', () => {
+            currentSessionId = el.dataset.id;
+            loadSessionMessages(currentSessionId);
+            attachedFile = null; updatePreview();
+            if (sidebar) sidebar.classList.remove('open');
+        }));
+    }
+
+    function newChat() { let newId = Date.now().toString(); sessions.unshift({ id: newId, title: "Nouveau chat", messages: [{ role: "assistant", content: "🦊 Nouvelle conversation avec DAKIS.", timestamp: Date.now() }], createdAt: Date.now() }); currentSessionId = newId; saveSessions(); loadSessionMessages(currentSessionId); attachedFile = null; updatePreview(); setStatus("✨ Nouvelle discussion"); if (sidebar) sidebar.classList.remove('open'); }
+    function clearHistory() { if (confirm("⚠️ Effacer tout l'historique ?")) { sessions = [{ id: Date.now().toString(), title: "Réinitialisé", messages: [{ role: "assistant", content: "🗑️ Historique effacé. DAKIS est prêt.", timestamp: Date.now() }], createdAt: Date.now() }]; currentSessionId = sessions[0].id; saveSessions(); loadSessionMessages(currentSessionId); attachedFile = null; updatePreview(); setStatus("Historique effacé"); } }
+
+    function updatePreview() {
+        if (!filePreviewDiv) return;
+        filePreviewDiv.innerHTML = '';
+        if (attachedFile) {
+            let badge = document.createElement('div'); badge.className = 'file-badge';
+            badge.innerHTML = `📄 ${attachedFile.fileName} <span class="remove-file" id="removeFileBtn">✕</span>`;
+            filePreviewDiv.appendChild(badge);
+            document.getElementById('removeFileBtn')?.addEventListener('click', () => { attachedFile = null; updatePreview(); setStatus("Fichier retiré"); });
+        }
+    }
+
+    async function processFile(file) {
+        if (file.size > 20 * 1024 * 1024) { setStatus("❌ Fichier trop volumineux (>20Mo)", true); return false; }
+        if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
+            return new Promise(resolve => {
+                let reader = new FileReader();
+                reader.onload = e => { attachedFile = { dataURL: e.target.result, mimeType: file.type, fileName: file.name, type: file.type.startsWith('image/') ? 'image' : 'pdf' }; updatePreview(); setStatus(`✅ ${file.name} chargé`); resolve(true); };
+                reader.onerror = () => { setStatus("❌ Erreur", true); resolve(false); };
+                reader.readAsDataURL(file);
+            });
+        } else if (file.name.endsWith('.docx')) {
+            try { let buf = await file.arrayBuffer(); let result = await mammoth.extractRawText({ arrayBuffer: buf }); attachedFile = { textContent: result.value, fileName: file.name, type: 'docx' }; updatePreview(); setStatus(`📄 Word extrait (${result.value.length} car.)`); return true; }
+            catch (e) { setStatus("❌ Erreur DOCX", true); return false; }
+        } else { setStatus("❌ Format non supporté", true); return false; }
+    }
+
+    if (dragZone) {
+        dragZone.addEventListener('dragover', e => { e.preventDefault(); dragZone.classList.add('drag-over'); });
+        dragZone.addEventListener('dragleave', () => dragZone.classList.remove('drag-over'));
+        dragZone.addEventListener('drop', async e => { e.preventDefault(); dragZone.classList.remove('drag-over'); if (e.dataTransfer.files.length) await processFile(e.dataTransfer.files[0]); });
+        dragZone.addEventListener('click', () => fileInput.click());
+    }
+    if (fileInput) fileInput.addEventListener('change', async e => { if (e.target.files.length) await processFile(e.target.files[0]); fileInput.value = ''; });
+
+    let recognition = null;
+    if (voiceBtn && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SR();
+        recognition.lang = 'fr-FR';
+        recognition.continuous = false;
+        let isRecording = false;
+        voiceBtn.onclick = () => { if (isRecording) { recognition.stop(); return; } recognition.start(); isRecording = true; voiceBtn.classList.add('recording'); };
+        recognition.onresult = e => { const text = Array.from(e.results).map(r => r[0].transcript).join(''); userInput.value += (userInput.value ? ' ' : '') + text; };
+        recognition.onend = () => { isRecording = false; voiceBtn.classList.remove('recording'); };
+        recognition.onerror = () => { isRecording = false; voiceBtn.classList.remove('recording'); setStatus("Dictée indisponible", true); };
+    } else if (voiceBtn) { voiceBtn.style.display = 'none'; }
+
+    async function callAPI(userText) {
+        let model = modelSelect.value;
+        if (!model) { setStatus("❌ Sélectionnez un modèle", true); return null; }
+        let provider = getProviderForModel(model);
+        let apiKey = currentApiKeys[provider];
+        if (!apiKey) { setStatus(`❌ Clé ${providersConfig[provider]?.name} manquante`, true); return null; }
+
+        let conf = providersConfig[provider];
+        let sessionMsgs = sessions.find(s => s.id === currentSessionId)?.messages.slice(-12).map(m => ({ role: m.role, content: m.content })) || [];
+
+        let systemPrompt = "Tu es DAKIS, assistant IA professionnel et utile. Réponds en Markdown si pertinent.";
+        if (currentAgent) systemPrompt = `[AGENT: ${currentAgent.name}] ${currentAgent.instructions || currentAgent.desc}. ${systemPrompt}`;
+
+        let memories = getRelevantMemories(userText);
+        if (memories.length) systemPrompt += `\n\n[Contexte mémoire: ${memories.map(m => m.content).join('; ')}]`;
+
+        let messages = [{ role: "system", content: systemPrompt }, ...sessionMsgs, { role: "user", content: userText }];
+
+        try {
+            setStatus("⏳ DAKIS réfléchit...");
+            let resp = await fetch(conf.baseURL, { method: "POST", headers: conf.headers(apiKey), body: JSON.stringify({ model, messages, temperature: 0.7, max_tokens: 4000 }) });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            let data = await resp.json();
+            return data.choices?.[0]?.message?.content || "Pas de réponse.";
+        } catch (e) { setStatus(`❌ Erreur API: ${e.message}`, true); return null; }
+    }
+
+    async function handleSend() {
+        let msg = userInput.value.trim();
+        if (!msg && !attachedFile) { setStatus("✍️ Écrivez un message", true); return; }
+        let finalMsg = msg || (attachedFile ? "Analyse ce document" : "");
+        let displayMsg = finalMsg + (attachedFile ? `\n\n📎 [${attachedFile.fileName}]` : "");
+        addMessage('user', displayMsg);
+        userInput.value = '';
+        let fileCopy = attachedFile;
+        attachedFile = null;
+        updatePreview();
+
+        let typingDiv = document.createElement('div');
+        typingDiv.className = 'typing-indicator'; typingDiv.id = 'typingIndicator';
+        typingDiv.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+        messagesContainer.appendChild(typingDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        let reply = await callAPI(finalMsg);
+        const typingIndicator = document.getElementById('typingIndicator');
+        if (typingIndicator) typingIndicator.remove();
+        addMessage('assistant', reply || "❌ Erreur API. Vérifiez votre clé.");
+
+        if (fileCopy?.type === 'docx') {
+            addMessage('assistant', "📄 **Document prêt à exporter**\n\nCliquez sur le bouton ci-dessous pour télécharger le DOCX.");
+            let lastMsg = messagesContainer.lastChild;
+            if (lastMsg) {
+                let exportBtn = document.createElement('button');
+                exportBtn.textContent = '📄 Télécharger DOCX';
+                exportBtn.style.cssText = 'background:var(--accent);border:none;border-radius:12px;padding:10px;margin-top:5px;cursor:pointer;color:#1f2e38;font-weight:bold;';
+                exportBtn.onclick = () => {
+                    const blob = new Blob([`# Document traité par DAKIS\n\n${reply || ''}`], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a'); a.href = url; a.download = 'dakis_export.docx'; a.click();
+                    URL.revokeObjectURL(url);
+                };
+                lastMsg.appendChild(exportBtn);
+            }
+        }
+    }
+
+    if (wizardAgentBtn) {
+        wizardAgentBtn.onclick = () => { wizardModal.classList.add('active'); wizardResult.style.display = 'none'; wizardDesc.value = ''; };
+    }
+    if (wizardCloseBtn) wizardCloseBtn.onclick = () => wizardModal.classList.remove('active');
+    if (wizardGenerateBtn) {
+        wizardGenerateBtn.onclick = async () => {
+            const desc = wizardDesc.value.trim();
+            if (!desc) { setStatus("❌ Décrivez l'agent", true); return; }
+            wizardGenerateBtn.disabled = true;
+            wizardGenerateBtn.textContent = '⏳ Génération...';
+
+            let apiKey = currentApiKeys.mistral;
+            if (!apiKey) { setStatus("❌ Clé Mistral requise pour générer des agents", true); wizardGenerateBtn.disabled = false; wizardGenerateBtn.textContent = '🚀 Générer'; return; }
+
+            try {
+                let resp = await fetch(providersConfig.mistral.baseURL, {
+                    method: "POST", headers: providersConfig.mistral.headers(apiKey),
+                    body: JSON.stringify({ model: "mistral-tiny", messages: [{ role: "user", content: `Génère un agent IA avec: nom (court), description (une phrase), instructions détaillées (3-5 règles), température (0-2). Format JSON: {"name":"...","desc":"...","instructions":"...","temperature":0.7}` }], max_tokens: 1000 })
+                });
+                if (!resp.ok) throw new Error();
+                let data = await resp.json();
+                let content = data.choices[0].message.content;
+                let jsonMatch = content.match(/\{.*\}/s);
+                if (jsonMatch) {
+                    let agent = JSON.parse(jsonMatch[0]);
+                    agent.id = Date.now().toString();
+                    agent.created = Date.now();
+                    agents.push(agent);
+                    saveAgents();
+                    renderAgents();
+                    wizardResult.style.display = 'block';
+                    wizardResult.innerHTML = `<div style="background:rgba(0,0,0,0.2);border-radius:12px;padding:12px;"><strong>✅ Agent créé : ${agent.name}</strong><br>${agent.desc}</div>`;
+                    setStatus(`Agent "${agent.name}" créé !`);
+                } else throw new Error();
+            } catch (e) {
+                wizardResult.style.display = 'block';
+                wizardResult.innerHTML = '<div style="color:var(--danger);">❌ Erreur de génération. Réessayez.</div>';
+            }
+            wizardGenerateBtn.disabled = false;
+            wizardGenerateBtn.textContent = '🚀 Générer';
+        };
+    }
+
+    if (sendButton) sendButton.addEventListener('click', handleSend);
+    if (newChatBtn) newChatBtn.addEventListener('click', newChat);
+    if (clearAllHistoryBtn) clearAllHistoryBtn.addEventListener('click', clearHistory);
+    if (userInput) userInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } });
+
+    loadApiKeys();
+    loadAgents();
+    loadMemory();
+    loadSessions();
+    setStatus("🦊 DAKIS prêt - Configurez vos clés API gratuites");
+
+    if (wizardModal) wizardModal.addEventListener('click', e => { if (e.target === wizardModal) wizardModal.classList.remove('active'); });
+</script>
+</body>
+</html>

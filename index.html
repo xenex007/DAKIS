@@ -6,6 +6,8 @@
     <title>DAKIS by XeneX - Assistant IA</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- ✅ NOUVEAU : pdf.js pour extraire le texte des PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -87,7 +89,6 @@
 
         .app-container { display: flex; height: 100%; width: 100%; background: var(--bg-secondary); }
 
-        /* ========= SIDEBAR ========= */
         .sidebar {
             width: 320px; min-width: 320px;
             background: var(--bg-sidebar);
@@ -162,7 +163,6 @@
 
         .config-spacer { height: 0.8rem; flex-shrink: 0; }
 
-        /* ========= AGENTS — CRUD amélioré ========= */
         .agents-section { margin: 0 1rem 1rem; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 12px; flex-shrink: 0; }
         .agents-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .agents-list { max-height: 220px; overflow-y: auto; }
@@ -180,7 +180,6 @@
         .agent-name { font-weight: 600; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .agent-desc { font-size: 0.7rem; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* Boutons d'action agent */
         .agent-actions { display: flex; gap: 4px; flex-shrink: 0; }
         .agent-edit-btn {
             background: rgba(232,181,90,0.15); border: 1px solid var(--accent);
@@ -198,7 +197,6 @@
         }
         .agent-delete-btn:hover { background: #dc3545; color: white; }
 
-        /* Modal d'édition d'agent */
         .edit-agent-panel {
             background: rgba(0,0,0,0.35); border-radius: 10px; padding: 12px;
             margin-top: 8px; border: 1px solid var(--border-light);
@@ -236,7 +234,6 @@
         .clear-all-btn { background: var(--danger); border: none; margin: 0 1rem 1.5rem; padding: 10px; border-radius: 12px; font-weight: 600; color: white; cursor: pointer; flex-shrink: 0; transition: all 0.2s; }
         .clear-all-btn:hover { filter: brightness(1.15); }
 
-        /* ========= MAIN CHAT ========= */
         .main-chat { flex: 1; display: flex; flex-direction: column; background: var(--bg-secondary); overflow: hidden; }
         .chat-header { background: var(--bg-primary); padding: 1rem 2rem; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: center; gap: 12px; }
         .chat-header h3 span { color: var(--accent); }
@@ -260,7 +257,6 @@
         .msg-action-btn { background: transparent; border: 1px solid var(--border-light); border-radius: 12px; padding: 2px 8px; font-size: 0.7rem; cursor: pointer; color: var(--text-primary); }
         .msg-action-btn:hover { background: var(--accent); color: #1f2e38; }
 
-        /* ========= STREAMING — curseur clignotant ========= */
         .streaming-cursor { display: inline-block; width: 2px; height: 1em; background: var(--accent); margin-left: 2px; vertical-align: middle; animation: blink 0.7s step-end infinite; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
@@ -272,18 +268,15 @@
 
         .input-panel { background: var(--bg-primary); border-top: 1px solid var(--border-light); padding: 1.5rem 2rem; display: flex; flex-direction: column; gap: 12px; }
 
-        /* ========= CHECKLIST FICHIERS ========= */
         .drag-drop-zone { border: 2px dashed var(--border-light); border-radius: 16px; padding: 12px 20px; background: var(--input-bg); text-align: center; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
         .drag-drop-zone:hover { border-color: var(--accent); background: rgba(0,0,0,0.05); }
 
-        /* Liste de fichiers avec statuts */
         .file-list { display: flex; flex-direction: column; gap: 6px; }
         .file-list-item {
             display: flex; align-items: center; gap: 10px;
             background: var(--bg-secondary); border: 1px solid var(--border-light);
             border-radius: 10px; padding: 8px 12px; font-size: 0.82rem;
         }
-        /* Indicateur d'état circulaire */
         .file-status-icon {
             width: 22px; height: 22px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
@@ -322,7 +315,6 @@
         .modal-overlay.active { display: flex; }
         .modal-box { background: var(--bg-primary); border-radius: 20px; width: 100%; max-width: 600px; max-height: 80vh; overflow-y: auto; padding: 20px; border: 1px solid var(--border-light); }
 
-        /* ========= COPY RESULT PANEL (remplace DOCX) ========= */
         .copy-result-panel { background: var(--bg-secondary); border: 1px solid var(--border-light); border-radius: 12px; padding: 12px; margin-top: 8px; }
         .copy-result-text { width: 100%; padding: 10px; background: var(--input-bg); border: 1px solid var(--border-light); border-radius: 8px; color: var(--text-primary); font-size: 0.85rem; resize: vertical; min-height: 80px; font-family: inherit; user-select: all; }
         .copy-clipboard-btn {
@@ -390,7 +382,6 @@
                 <button id="wizardAgentBtn" class="change-key-btn" style="padding:4px 10px;">✨ Wizard</button>
             </div>
             <div id="agentsList" class="agents-list"></div>
-            <!-- Panel d'édition inline -->
             <div id="editAgentPanel" class="edit-agent-panel">
                 <input type="text" id="editAgentName" placeholder="Nom de l'agent">
                 <input type="text" id="editAgentDesc" placeholder="Description courte">
@@ -426,7 +417,6 @@
                 📎 Glissez un fichier (PDF, Image, .docx) ou <span style="color:var(--accent);">parcourir</span>
                 <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg,.docx" style="display:none;">
             </div>
-            <!-- Checklist fichiers -->
             <div id="fileList" class="file-list"></div>
             <div class="message-input-row">
                 <textarea id="userInput" class="chat-input" rows="2" placeholder="Votre message pour DAKIS..."></textarea>
@@ -438,7 +428,6 @@
     </div>
 </div>
 
-<!-- Wizard modal -->
 <div id="wizardModal" class="modal-overlay">
     <div class="modal-box">
         <h3 style="margin-bottom:15px;">✨ Création d'agent assistée</h3>
@@ -453,6 +442,13 @@
 </div>
 
 <script>
+// =====================================================
+// ✅ CONFIGURATION PDF.JS (worker pour extraction texte)
+// =====================================================
+if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
 // =====================================================
 // CONFIG PROVIDERS
 // =====================================================
@@ -470,7 +466,7 @@ let currentApiKeys = {};
 let activeProvider = "mistral";
 let currentSessionId = Date.now().toString();
 let sessions = [];
-let attachedFiles = []; // Array — checklist multi-fichier
+let attachedFiles = [];
 let agents = [];
 let globalMemories = [];
 let currentAgent = null;
@@ -619,7 +615,6 @@ function renderAgents() {
             </div>
         </div>`).join('');
 
-    // Activation (clic sur la zone info)
     agentsListDiv.querySelectorAll('.agent-item').forEach(el => {
         el.querySelector('.agent-item-info').addEventListener('click', () => {
             const id = el.dataset.id;
@@ -631,7 +626,6 @@ function renderAgents() {
         });
     });
 
-    // Bouton Modifier
     agentsListDiv.querySelectorAll('.agent-edit-btn').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
@@ -647,7 +641,6 @@ function renderAgents() {
         });
     });
 
-    // Bouton Supprimer (icône X)
     agentsListDiv.querySelectorAll('.agent-delete-btn').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
@@ -665,7 +658,6 @@ function renderAgents() {
     });
 }
 
-// Sauvegarde édition
 editAgentSave.addEventListener('click', () => {
     if (!editingAgentId) return;
     const idx = agents.findIndex(a=>a.id===editingAgentId);
@@ -779,7 +771,33 @@ function clearHistory() {
 }
 
 // =====================================================
-// CHECKLIST FICHIERS — indicateurs d'état visuels
+// ✅ NOUVEAU : EXTRACTION DE TEXTE PDF VIA PDF.JS
+// =====================================================
+async function extractTextFromPDF(dataURL) {
+    if (!window.pdfjsLib) throw new Error('pdf.js non chargé');
+    // Convertir dataURL en Uint8Array
+    const base64 = dataURL.split(',')[1];
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+    const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+    let fullText = '';
+    const numPages = pdf.numPages;
+    // Limiter à 30 pages pour éviter les PDF trop lourds
+    const maxPages = Math.min(numPages, 30);
+    for (let i = 1; i <= maxPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const pageText = content.items.map(item => item.str).join(' ');
+        fullText += `\n--- Page ${i} ---\n${pageText}`;
+    }
+    if (numPages > 30) fullText += `\n\n[Note: PDF de ${numPages} pages, seules les 30 premières ont été lues]`;
+    return fullText.trim();
+}
+
+// =====================================================
+// CHECKLIST FICHIERS
 // =====================================================
 function renderFileList() {
     fileListDiv.innerHTML = '';
@@ -800,7 +818,6 @@ function renderFileList() {
             <button class="file-remove-btn" data-remove="${idx}" title="Retirer">✕</button>`;
         fileListDiv.appendChild(item);
     });
-    // Boutons retrait
     fileListDiv.querySelectorAll('.file-remove-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const i = parseInt(btn.dataset.remove);
@@ -811,36 +828,78 @@ function renderFileList() {
     });
 }
 
+// =====================================================
+// ✅ MODIFIÉ : processFile extrait maintenant le texte des PDF
+// =====================================================
 async function processFile(file) {
     if (file.size > 20*1024*1024) { setStatus('❌ Fichier trop volumineux (>20Mo)', true); return; }
-    // Ajouter à la liste en statut "loading"
     const fileEntry = { fileName: file.name, status: 'loading', type: null };
     attachedFiles.push(fileEntry);
-    const idx = attachedFiles.length - 1;
     renderFileList();
 
     try {
-        if (file.type === 'application/pdf' || file.type.startsWith('image/')) {
+        if (file.type === 'application/pdf') {
+            // ✅ Lire le PDF en base64 ET extraire le texte
             await new Promise((resolve, reject) => {
                 const reader = new FileReader();
-                reader.onload = e => { fileEntry.dataURL = e.target.result; fileEntry.mimeType = file.type; fileEntry.type = file.type.startsWith('image/') ? 'image' : 'pdf'; resolve(); };
+                reader.onload = async e => {
+                    fileEntry.dataURL = e.target.result;
+                    fileEntry.mimeType = file.type;
+                    fileEntry.type = 'pdf';
+                    try {
+                        setStatus(`📖 Extraction du texte de ${file.name}...`);
+                        fileEntry.textContent = await extractTextFromPDF(e.target.result);
+                        if (!fileEntry.textContent || fileEntry.textContent.length < 20) {
+                            fileEntry.status = 'error';
+                            fileEntry.errorMsg = 'PDF sans texte lisible (scan/image ?)';
+                            renderFileList();
+                            setStatus('❌ PDF non lisible (probablement un scan). Utilisez un PDF texte.', true);
+                            return;
+                        }
+                        fileEntry.status = 'ready';
+                        renderFileList();
+                        setStatus(`✅ ${file.name} chargé (${fileEntry.textContent.length} caractères extraits)`);
+                    } catch(err) {
+                        fileEntry.status = 'error';
+                        fileEntry.errorMsg = err.message;
+                        renderFileList();
+                        setStatus(`❌ Erreur lecture PDF: ${err.message}`, true);
+                    }
+                    resolve();
+                };
                 reader.onerror = reject;
                 reader.readAsDataURL(file);
             });
+        } else if (file.type.startsWith('image/')) {
+            // ✅ Image : on la garde en base64 pour l'envoyer en vision
+            await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    fileEntry.dataURL = e.target.result;
+                    fileEntry.mimeType = file.type;
+                    fileEntry.type = 'image';
+                    fileEntry.status = 'ready';
+                    resolve();
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+            renderFileList();
+            setStatus(`✅ ${file.name} chargé (image)`);
         } else if (file.name.toLowerCase().endsWith('.docx')) {
             const buf = await file.arrayBuffer();
             const result = await mammoth.extractRawText({ arrayBuffer: buf });
             fileEntry.textContent = result.value;
             fileEntry.type = 'docx';
+            fileEntry.status = 'ready';
+            renderFileList();
+            setStatus(`✅ ${file.name} chargé`);
         } else {
             fileEntry.status = 'error';
             renderFileList();
             setStatus('❌ Format non supporté', true);
             return;
         }
-        fileEntry.status = 'ready';
-        renderFileList();
-        setStatus(`✅ ${file.name} chargé`);
     } catch(e) {
         fileEntry.status = 'error';
         renderFileList();
@@ -860,7 +919,6 @@ if (fileInput) fileInput.addEventListener('change', async e => { if (e.target.fi
 // MICROPHONE — FIX: persistance + pas de timeout 2s
 // =====================================================
 (function initVoice() {
-    // Détection SpeechRecognition — compatibilité Firefox (pas supporté nativement)
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
     if (!voiceBtn || !SR) {
         if (voiceBtn) voiceBtn.style.display = 'none';
@@ -869,21 +927,15 @@ if (fileInput) fileInput.addEventListener('change', async e => { if (e.target.fi
 
     let recognition = null;
     let isRecording = false;
-    let micStream = null; // garder le flux MediaStream actif
+    let micStream = null;
 
     async function requestMicPermission() {
-        // Si le stream existe déjà ET que ses tracks sont encore actives, on réutilise.
         if (micStream && micStream.getTracks().every(t => t.readyState === 'live')) {
             return true;
         }
-        // Sinon : soit premier appel, soit tracks mortes — on en crée un nouveau.
         try {
-            // Stopper les anciennes tracks avant d'en demander de nouvelles
-            // pour éviter les conflits de ressources sur certains navigateurs.
             if (micStream) micStream.getTracks().forEach(t => t.stop());
             micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            // Garder les tracks explicitement activées et NE JAMAIS les stopper
-            // entre deux sessions — c'est ce qui maintient la permission navigateur.
             micStream.getTracks().forEach(t => { t.enabled = true; });
             return true;
         } catch(e) {
@@ -896,9 +948,7 @@ if (fileInput) fileInput.addEventListener('change', async e => { if (e.target.fi
     function createRecognition() {
         const rec = new SR();
         rec.lang = 'fr-FR';
-        // continuous=true : ne s'arrête pas automatiquement après une pause
         rec.continuous = true;
-        // interimResults : permet d'obtenir les résultats partiels en temps réel
         rec.interimResults = true;
         rec.maxAlternatives = 1;
         return rec;
@@ -912,15 +962,11 @@ if (fileInput) fileInput.addEventListener('change', async e => { if (e.target.fi
             try { recognition.stop(); } catch(e) {}
             recognition = null;
         }
-        // IMPORTANT : on ne stoppe PAS micStream.getTracks() ici.
-        // Garder le stream audio vivant évite que le navigateur
-        // redemande la permission au prochain clic.
     }
 
     voiceBtn.addEventListener('click', async () => {
         if (isRecording) { stopRecording(); return; }
 
-        // Demander la permission micro (persistante via le stream maintenu)
         const granted = await requestMicPermission();
         if (!granted) return;
 
@@ -933,21 +979,16 @@ if (fileInput) fileInput.addEventListener('change', async e => { if (e.target.fi
                 if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript + ' ';
                 else interim += e.results[i][0].transcript;
             }
-            // Afficher la transcription en temps réel dans l'input
             userInput.value = (finalTranscript + interim).trim();
         };
 
         recognition.onend = () => {
-            // Ne pas s'arrêter automatiquement si l'utilisateur n'a pas cliqué stop.
-            // Redémarrer automatiquement (contournement du comportement navigateur
-            // qui coupe après une pause de silence ~2s).
             if (isRecording) {
                 try { recognition.start(); } catch(e) { stopRecording(); }
             }
         };
 
         recognition.onerror = e => {
-            // 'no-speech' est normal après une pause : ne pas arrêter
             if (e.error === 'no-speech') return;
             setStatus(`❌ Erreur micro: ${e.error}`, true);
             stopRecording();
@@ -967,7 +1008,7 @@ if (fileInput) fileInput.addEventListener('change', async e => { if (e.target.fi
 })();
 
 // =====================================================
-// API CALL — avec STREAMING (stream=true)
+// API CALL — avec STREAMING
 // =====================================================
 async function callAPIStream(userText, onChunk, onDone, onError) {
     const model = modelSelect.value;
@@ -981,8 +1022,6 @@ async function callAPIStream(userText, onChunk, onDone, onError) {
 
     let systemPrompt;
     if (currentAgent) {
-        // L'agent remplace COMPLÈTEMENT l'identité DAKIS.
-        // On n'ajoute plus "Tu es DAKIS" pour éviter le conflit d'identité.
         systemPrompt = `Tu es ${currentAgent.name}, un agent IA spécialisé.
 Voici tes instructions : ${currentAgent.instructions || currentAgent.desc}
 Reste dans ce rôle en toutes circonstances. Ne mentionne jamais DAKIS. Réponds en Markdown si pertinent.`;
@@ -994,7 +1033,6 @@ Reste dans ce rôle en toutes circonstances. Ne mentionne jamais DAKIS. Réponds
 
     const messages = [{role:'system',content:systemPrompt}, ...sessionMsgs, {role:'user',content:userText}];
 
-    // Construire le payload avec stream:true
     const body = JSON.stringify({ model, messages, temperature:0.7, max_tokens:4000, stream:true });
 
     try {
@@ -1002,7 +1040,6 @@ Reste dans ce rôle en toutes circonstances. Ne mentionne jamais DAKIS. Réponds
         const resp = await fetch(conf.baseURL, { method:'POST', headers:conf.headers(apiKey), body });
         if (!resp.ok) { onError(`HTTP ${resp.status}`); return; }
 
-        // Lire le flux SSE (Server-Sent Events)
         const reader = resp.body.getReader();
         const decoder = new TextDecoder('utf-8');
         let buffer = '';
@@ -1013,7 +1050,7 @@ Reste dans ce rôle en toutes circonstances. Ne mentionne jamais DAKIS. Réponds
             if (done) break;
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split('\n');
-            buffer = lines.pop(); // garder le reste incomplet
+            buffer = lines.pop();
 
             for (const line of lines) {
                 if (!line.startsWith('data:')) continue;
@@ -1023,7 +1060,7 @@ Reste dans ce rôle en toutes circonstances. Ne mentionne jamais DAKIS. Réponds
                     const parsed = JSON.parse(data);
                     const delta = parsed.choices?.[0]?.delta?.content || '';
                     if (delta) { fullContent += delta; onChunk(delta, fullContent); }
-                } catch(e) { /* chunk JSON invalide, on ignore */ }
+                } catch(e) {}
             }
         }
         onDone(fullContent);
@@ -1031,7 +1068,7 @@ Reste dans ce rôle en toutes circonstances. Ne mentionne jamais DAKIS. Réponds
 }
 
 // =====================================================
-// HANDLE SEND — streaming + checklist fichiers
+// ✅ MODIFIÉ : handleSend injecte maintenant PDF + images
 // =====================================================
 async function handleSend() {
     const msg = userInput.value.trim();
@@ -1046,13 +1083,18 @@ async function handleSend() {
     attachedFiles = [];
     renderFileList();
 
-    // Construire le prompt avec les fichiers
-    let finalMsg = msg || 'Analyse ce document';
+    // ✅ Construire le prompt avec TOUS les fichiers (PDF, DOCX, images)
+    let finalMsg = msg || 'Analyse ce(s) document(s)';
     filesToProcess.forEach(f => {
-        if (f.type === 'docx') finalMsg += `\n\n[Document "${f.fileName}"]\n${f.textContent}`;
+        if (f.type === 'docx' || f.type === 'pdf') {
+            // ✅ PDF et DOCX : on injecte le texte extrait
+            finalMsg += `\n\n=== DOCUMENT "${f.fileName}" ===\n${f.textContent}\n=== FIN DU DOCUMENT ===`;
+        } else if (f.type === 'image') {
+            // Image : on signale sa présence (les APIs textuelles ne peuvent pas la voir)
+            finalMsg += `\n\n[Image jointe: "${f.fileName}" — note: ce modèle ne peut pas voir les images directement]`;
+        }
     });
 
-    // Créer le message de réponse en streaming
     const botMsgDiv = document.createElement('div');
     botMsgDiv.className = 'message bot-message';
     const bubbleDiv = document.createElement('div');
@@ -1068,18 +1110,15 @@ async function handleSend() {
 
     callAPIStream(
         finalMsg,
-        // onChunk — affichage progressif
         (delta, full) => {
             streamedContent = full;
             bubbleDiv.innerHTML = marked.parse(full);
             bubbleDiv.appendChild(cursor);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         },
-        // onDone — finaliser le message
         (full) => {
             cursor.remove();
             bubbleDiv.innerHTML = marked.parse(full || '...');
-            // Actions du message
             const actionsDiv = document.createElement('div');
             actionsDiv.className = 'msg-actions';
             const ts = Date.now();
@@ -1090,16 +1129,13 @@ async function handleSend() {
             botMsgDiv.appendChild(actionsDiv);
             botMsgDiv.appendChild(timeDiv);
 
-            // Sauvegarder dans la session
             const sess = sessions.find(s=>s.id===currentSessionId);
             if (sess) { sess.messages.push({role:'assistant',content:full,timestamp:ts}); saveCurrentMessages(sess.messages); }
             setStatus('');
 
-            // Si fichier docx traité : proposer copier-coller au lieu de DOCX
-            const hasDocx = filesToProcess.some(f=>f.type==='docx');
-            if (hasDocx) showCopyPanel(full);
+            const hasDocxOrPdf = filesToProcess.some(f=>f.type==='docx' || f.type==='pdf');
+            if (hasDocxOrPdf) showCopyPanel(full);
         },
-        // onError
         (errMsg) => {
             cursor.remove();
             bubbleDiv.innerHTML = `<span style="color:#e74c3c;">❌ Erreur API : ${escapeHtml(errMsg)}</span>`;
@@ -1109,7 +1145,7 @@ async function handleSend() {
 }
 
 // =====================================================
-// COPY PANEL — remplace l'export DOCX
+// COPY PANEL
 // =====================================================
 function showCopyPanel(content) {
     const panel = document.createElement('div');
@@ -1127,7 +1163,6 @@ function showCopyPanel(content) {
             this.classList.add('copied');
             setTimeout(() => { this.textContent = '📋 Copier dans le presse-papiers'; this.classList.remove('copied'); }, 2500);
         }).catch(() => {
-            // Fallback sélection manuelle
             panel.querySelector('.copy-result-text').select();
             setStatus('Sélectionnez le texte et copiez (Ctrl+C)', false);
         });

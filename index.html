@@ -4,10 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>DAKIS by XeneX - Assistant IA</title>
+    
+    <!-- Bibliothèques de traitement de fichiers -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- ✅ NOUVEAU : pdf.js pour extraire le texte des PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- ✅ NOUVEAU : Tesseract.js pour l'OCR (Images et PDF scannés) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -443,7 +447,7 @@
 
 <script>
 // =====================================================
-// ✅ CONFIGURATION PDF.JS (worker pour extraction texte)
+// CONFIGURATION DES BIBLIOTHÈQUES
 // =====================================================
 if (window.pdfjsLib) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -771,11 +775,30 @@ function clearHistory() {
 }
 
 // =====================================================
-// ✅ NOUVEAU : EXTRACTION DE TEXTE PDF VIA PDF.JS
+// ✅ NOUVEAU : OCR AVEC TESSERACT.JS
+// =====================================================
+async function performOCR(imageDataUrl) {
+    if (!window.Tesseract) throw new Error('Tesseract.js non chargé');
+    
+    const result = await Tesseract.recognize(
+        imageDataUrl,
+        'fra+ara+eng', // Français + Arabe + Anglais
+        {
+            logger: m => {
+                if (m.status === 'recognizing text') {
+                    setStatus(`🔍 OCR en cours : ${Math.round(m.progress * 100)}%`);
+                }
+            }
+        }
+    );
+    return result.data.text.trim();
+}
+
+// =====================================================
+// ✅ NOUVEAU : EXTRACTION TEXTE PDF + FALLBACK OCR
 // =====================================================
 async function extractTextFromPDF(dataURL) {
     if (!window.pdfjsLib) throw new Error('pdf.js non chargé');
-    // Convertir dataURL en Uint8Array
     const base64 = dataURL.split(',')[1];
     const binary = atob(base64);
     const bytes = new Uint8Array(binary.length);
@@ -783,16 +806,51 @@ async function extractTextFromPDF(dataURL) {
 
     const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
     let fullText = '';
-    const numPages = pdf.numPages;
-    // Limiter à 30 pages pour éviter les PDF trop lourds
-    const maxPages = Math.min(numPages, 30);
-    for (let i = 1; i <= maxPages; i++) {
+    const numPages = Math.min(pdf.numPages, 30);
+    
+    for (let i = 1; i <= numPages; i++) {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
         const pageText = content.items.map(item => item.str).join(' ');
         fullText += `\n--- Page ${i} ---\n${pageText}`;
     }
-    if (numPages > 30) fullText += `\n\n[Note: PDF de ${numPages} pages, seules les 30 premières ont été lues]`;
+    return fullText.trim();
+}
+
+async function extractTextFromPDFWithOCR(pdfDataUrl) {
+    if (!window.pdfjsLib || !window.Tesseract) throw new Error('Bibliothèques OCR non chargées');
+    
+    const base64 = pdfDataUrl.split(',')[1];
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+    const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+    let fullText = '';
+    const numPages = Math.min(pdf.numPages, 5); // Limite à 5 pages pour éviter le crash navigateur
+    
+    setStatus(`🔍 PDF scanné détecté. OCR sur ${numPages} pages max...`);
+    
+    for (let i = 1; i <= numPages; i++) {
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 2.0 });
+        
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        
+        await page.render({ canvasContext: context, viewport: viewport }).promise;
+        const imageData = canvas.toDataURL('image/png');
+        
+        setStatus(`🔍 OCR Page ${i}/${numPages}...`);
+        const ocrResult = await performOCR(imageData);
+        fullText += `\n--- Page ${i} (OCR) ---\n${ocrResult}`;
+    }
+    
+    if (pdf.numPages > 5) {
+        fullText += `\n\n[Note: PDF de ${pdf.numPages} pages. Seules les 5 premières ont été analysées par OCR pour des raisons de performance.]`;
+    }
     return fullText.trim();
 }
 
@@ -829,7 +887,7 @@ function renderFileList() {
 }
 
 // =====================================================
-// ✅ MODIFIÉ : processFile extrait maintenant le texte des PDF
+// ✅ MODIFIÉ : processFile avec OCR pour Images et PDF scannés
 // =====================================================
 async function processFile(file) {
     if (file.size > 20*1024*1024) { setStatus('❌ Fichier trop volumineux (>20Mo)', true); return; }
@@ -839,7 +897,6 @@ async function processFile(file) {
 
     try {
         if (file.type === 'application/pdf') {
-            // ✅ Lire le PDF en base64 ET extraire le texte
             await new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = async e => {
@@ -849,44 +906,53 @@ async function processFile(file) {
                     try {
                         setStatus(`📖 Extraction du texte de ${file.name}...`);
                         fileEntry.textContent = await extractTextFromPDF(e.target.result);
-                        if (!fileEntry.textContent || fileEntry.textContent.length < 20) {
-                            fileEntry.status = 'error';
-                            fileEntry.errorMsg = 'PDF sans texte lisible (scan/image ?)';
-                            renderFileList();
-                            setStatus('❌ PDF non lisible (probablement un scan). Utilisez un PDF texte.', true);
-                            return;
+                        
+                        // Si peu de texte extrait, c'est probablement un PDF scanné → Fallback OCR
+                        if (!fileEntry.textContent || fileEntry.textContent.trim().length < 50) {
+                            fileEntry.textContent = await extractTextFromPDFWithOCR(e.target.result);
                         }
+                        
                         fileEntry.status = 'ready';
                         renderFileList();
-                        setStatus(`✅ ${file.name} chargé (${fileEntry.textContent.length} caractères extraits)`);
+                        setStatus(`✅ ${file.name} chargé (${fileEntry.textContent.length} caractères)`);
                     } catch(err) {
                         fileEntry.status = 'error';
                         fileEntry.errorMsg = err.message;
                         renderFileList();
-                        setStatus(`❌ Erreur lecture PDF: ${err.message}`, true);
+                        setStatus(`❌ Erreur PDF: ${err.message}`, true);
                     }
                     resolve();
                 };
                 reader.onerror = reject;
                 reader.readAsDataURL(file);
             });
-        } else if (file.type.startsWith('image/')) {
-            // ✅ Image : on la garde en base64 pour l'envoyer en vision
+        } 
+        else if (file.type.startsWith('image/')) {
             await new Promise((resolve, reject) => {
                 const reader = new FileReader();
-                reader.onload = e => {
+                reader.onload = async e => {
                     fileEntry.dataURL = e.target.result;
                     fileEntry.mimeType = file.type;
                     fileEntry.type = 'image';
-                    fileEntry.status = 'ready';
+                    try {
+                        setStatus(`🔍 OCR en cours sur ${file.name}... (patientez 3-10s)`);
+                        fileEntry.textContent = await performOCR(e.target.result);
+                        fileEntry.status = 'ready';
+                        renderFileList();
+                        setStatus(`✅ ${file.name} analysé (${fileEntry.textContent.length} caractères)`);
+                    } catch(err) {
+                        fileEntry.status = 'error';
+                        fileEntry.errorMsg = err.message;
+                        renderFileList();
+                        setStatus(`❌ Erreur OCR: ${err.message}`, true);
+                    }
                     resolve();
                 };
                 reader.onerror = reject;
                 reader.readAsDataURL(file);
             });
-            renderFileList();
-            setStatus(`✅ ${file.name} chargé (image)`);
-        } else if (file.name.toLowerCase().endsWith('.docx')) {
+        } 
+        else if (file.name.toLowerCase().endsWith('.docx')) {
             const buf = await file.arrayBuffer();
             const result = await mammoth.extractRawText({ arrayBuffer: buf });
             fileEntry.textContent = result.value;
@@ -898,7 +964,6 @@ async function processFile(file) {
             fileEntry.status = 'error';
             renderFileList();
             setStatus('❌ Format non supporté', true);
-            return;
         }
     } catch(e) {
         fileEntry.status = 'error';
@@ -1068,7 +1133,7 @@ Reste dans ce rôle en toutes circonstances. Ne mentionne jamais DAKIS. Réponds
 }
 
 // =====================================================
-// ✅ MODIFIÉ : handleSend injecte maintenant PDF + images
+// ✅ MODIFIÉ : handleSend injecte maintenant PDF + images (via OCR)
 // =====================================================
 async function handleSend() {
     const msg = userInput.value.trim();
@@ -1083,15 +1148,11 @@ async function handleSend() {
     attachedFiles = [];
     renderFileList();
 
-    // ✅ Construire le prompt avec TOUS les fichiers (PDF, DOCX, images)
     let finalMsg = msg || 'Analyse ce(s) document(s)';
     filesToProcess.forEach(f => {
-        if (f.type === 'docx' || f.type === 'pdf') {
-            // ✅ PDF et DOCX : on injecte le texte extrait
-            finalMsg += `\n\n=== DOCUMENT "${f.fileName}" ===\n${f.textContent}\n=== FIN DU DOCUMENT ===`;
-        } else if (f.type === 'image') {
-            // Image : on signale sa présence (les APIs textuelles ne peuvent pas la voir)
-            finalMsg += `\n\n[Image jointe: "${f.fileName}" — note: ce modèle ne peut pas voir les images directement]`;
+        if (f.type === 'docx' || f.type === 'pdf' || f.type === 'image') {
+            // ✅ PDF, DOCX et IMAGES ont maintenant tous un 'textContent' extrait
+            finalMsg += `\n\n=== CONTENU DU FICHIER "${f.fileName}" ===\n${f.textContent}\n=== FIN DU CONTENU ===`;
         }
     });
 
@@ -1133,8 +1194,8 @@ async function handleSend() {
             if (sess) { sess.messages.push({role:'assistant',content:full,timestamp:ts}); saveCurrentMessages(sess.messages); }
             setStatus('');
 
-            const hasDocxOrPdf = filesToProcess.some(f=>f.type==='docx' || f.type==='pdf');
-            if (hasDocxOrPdf) showCopyPanel(full);
+            const hasDoc = filesToProcess.some(f=>f.type==='docx' || f.type==='pdf' || f.type==='image');
+            if (hasDoc) showCopyPanel(full);
         },
         (errMsg) => {
             cursor.remove();

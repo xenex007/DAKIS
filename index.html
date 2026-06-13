@@ -872,14 +872,22 @@ if (fileInput) fileInput.addEventListener('change', async e => { if (e.target.fi
     let micStream = null; // garder le flux MediaStream actif
 
     async function requestMicPermission() {
-        // Demander l'accès au micro UNE SEULE FOIS et garder le stream actif.
-        // Tant que micStream est non-null, le navigateur considère la permission comme accordée
-        // et ne redemande pas l'autorisation lors des utilisations suivantes.
-        if (micStream) return true;
+        // Si le stream existe déjà ET que ses tracks sont encore actives, on réutilise.
+        if (micStream && micStream.getTracks().every(t => t.readyState === 'live')) {
+            return true;
+        }
+        // Sinon : soit premier appel, soit tracks mortes — on en crée un nouveau.
         try {
+            // Stopper les anciennes tracks avant d'en demander de nouvelles
+            // pour éviter les conflits de ressources sur certains navigateurs.
+            if (micStream) micStream.getTracks().forEach(t => t.stop());
             micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            // Garder les tracks explicitement activées et NE JAMAIS les stopper
+            // entre deux sessions — c'est ce qui maintient la permission navigateur.
+            micStream.getTracks().forEach(t => { t.enabled = true; });
             return true;
         } catch(e) {
+            micStream = null;
             setStatus('❌ Accès microphone refusé', true);
             return false;
         }
@@ -900,7 +908,13 @@ if (fileInput) fileInput.addEventListener('change', async e => { if (e.target.fi
         isRecording = false;
         voiceBtn.classList.remove('recording');
         voiceBtn.title = 'Dictée vocale';
-        if (recognition) { try { recognition.stop(); } catch(e) {} recognition = null; }
+        if (recognition) {
+            try { recognition.stop(); } catch(e) {}
+            recognition = null;
+        }
+        // IMPORTANT : on ne stoppe PAS micStream.getTracks() ici.
+        // Garder le stream audio vivant évite que le navigateur
+        // redemande la permission au prochain clic.
     }
 
     voiceBtn.addEventListener('click', async () => {
@@ -965,8 +979,16 @@ async function callAPIStream(userText, onChunk, onDone, onError) {
     const conf = providersConfig[provider];
     const sessionMsgs = sessions.find(s=>s.id===currentSessionId)?.messages.slice(-12).map(m=>({role:m.role,content:m.content})) || [];
 
-    let systemPrompt = "Tu es DAKIS, assistant IA professionnel et utile. Réponds en Markdown si pertinent.";
-    if (currentAgent) systemPrompt = `[AGENT: ${currentAgent.name}] ${currentAgent.instructions||currentAgent.desc}. ${systemPrompt}`;
+    let systemPrompt;
+    if (currentAgent) {
+        // L'agent remplace COMPLÈTEMENT l'identité DAKIS.
+        // On n'ajoute plus "Tu es DAKIS" pour éviter le conflit d'identité.
+        systemPrompt = `Tu es ${currentAgent.name}, un agent IA spécialisé.
+Voici tes instructions : ${currentAgent.instructions || currentAgent.desc}
+Reste dans ce rôle en toutes circonstances. Ne mentionne jamais DAKIS. Réponds en Markdown si pertinent.`;
+    } else {
+        systemPrompt = "Tu es DAKIS, assistant IA professionnel et utile. Réponds en Markdown si pertinent.";
+    }
     const memories = getRelevantMemories(userText);
     if (memories.length) systemPrompt += `\n\n[Contexte mémoire: ${memories.map(m=>m.content).join('; ')}]`;
 

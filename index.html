@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>DAKIS by XeneX - Assistant IA</title>
+    <!-- ✅ BIBLIOTHÈQUES CDN REQUISES -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -11,6 +12,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- ✅ AJOUTÉ : html2canvas pour export PDF lisible -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -434,7 +437,7 @@
 
         <div id="configPanel" class="config-panel">
             <div class="config-section">
-                <label class="config-label">🔑 Clés API Gratuites</label>
+                <label class="config-label"> Clés API Gratuites</label>
                 <div id="providersContainer"></div>
             </div>
             <div class="config-section">
@@ -472,7 +475,7 @@
         </div>
 
         <div class="memory-section">
-            <label class="config-label">💾 Mémoire Globale</label>
+            <label class="config-label"> Mémoire Globale</label>
             <div id="memoryList" class="memory-list"></div>
             <div class="memory-input-row">
                 <input type="text" id="memoryInput" placeholder="Ajouter un souvenir...">
@@ -483,18 +486,18 @@
         <button id="newChatBtn" class="new-chat-btn">➕ Nouvelle Discussion</button>
         
         <div class="history-search">
-            <input type="text" id="historySearchInput" placeholder=" Rechercher...">
+            <input type="text" id="historySearchInput" placeholder="🔍 Rechercher...">
         </div>
         
         <div class="history-list" id="historyList"></div>
-        <button id="clearAllHistoryBtn" class="clear-all-btn">🗑️ Effacer tout l'historique</button>
+        <button id="clearAllHistoryBtn" class="clear-all-btn">️ Effacer tout l'historique</button>
     </div>
 
     <div class="main-chat">
         <div class="chat-header">
-            <button id="focusModeBtn" class="focus-mode-btn" title="Mode focus (F11)">️ Focus</button>
+            <button id="focusModeBtn" class="focus-mode-btn" title="Mode focus (F11)">🖥️ Focus</button>
             <h3 id="chatHeaderTitle"><span>DAKIS</span> by XeneX</h3>
-            <button id="clearCurrentBtn" class="clear-current-btn" title="Effacer cette discussion">🗑️ Effacer</button>
+            <button id="clearCurrentBtn" class="clear-current-btn" title="Effacer cette discussion">️ Effacer</button>
         </div>
         <div class="messages-area" id="messagesContainer"></div>
         <div class="input-panel">
@@ -505,7 +508,7 @@
             <div id="fileList" class="file-list"></div>
             <div class="message-input-row">
                 <textarea id="userInput" class="chat-input" rows="2" placeholder="Votre message pour DAKIS..."></textarea>
-                <button id="voiceBtn" class="voice-btn" title="Dictée vocale">🎤</button>
+                <button id="voiceBtn" class="voice-btn" title="Dictée vocale"></button>
                 <button id="sendButton" class="send-btn">Envoyer</button>
             </div>
             <div id="charCounter" class="char-counter">0 caractères</div>
@@ -558,6 +561,10 @@ let agents = [];
 let globalMemories = [];
 let currentAgent = null;
 let editingAgentId = null;
+// ✅ CORRIGÉ 1 : verrou anti-double envoi
+let isStreaming = false;
+// ✅ AMÉLIORÉ 6 : limite sessions configurable au lieu de 3 arbitraire
+const MAX_SESSIONS_ON_QUOTA = 10;
 
 // =====================================================
 // DOM REFS
@@ -777,23 +784,35 @@ TES RÈGLES STRICTES :
     }
 ];
 
+// ✅ CORRIGÉ 4 : flag dakis_agents_initialized distingue "jamais eu" de "tout supprimé"
 function loadAgents() {
     try {
         const stored = localStorage.getItem('dakis_agents');
-        if (stored) {
+        const initialized = localStorage.getItem('dakis_agents_initialized');
+
+        if (stored !== null) {
+            // Des agents existent (même tableau vide [])
             agents = JSON.parse(stored);
-        } else {
-            // ✅ PREMIÈRE UTILISATION : On injecte les 3 agents par défaut
+        } else if (!initialized) {
+            // Première utilisation réelle : injecter les agents par défaut
             agents = DEFAULT_AGENTS;
             saveAgents();
+            localStorage.setItem('dakis_agents_initialized', 'true');
+        } else {
+            // L'utilisateur a tout supprimé volontairement : respecter son choix
+            agents = [];
         }
     } catch(e) {
-        agents = DEFAULT_AGENTS;
-        saveAgents();
+        agents = [];
     }
     renderAgents();
 }
-function saveAgents() { localStorage.setItem('dakis_agents', JSON.stringify(agents)); }
+
+function saveAgents() {
+    localStorage.setItem('dakis_agents', JSON.stringify(agents));
+    // ✅ CORRIGÉ 4 : toujours marquer comme initialisé après sauvegarde
+    localStorage.setItem('dakis_agents_initialized', 'true');
+}
 
 function renderAgents() {
     if (!agentsListDiv) return;
@@ -822,7 +841,7 @@ function renderAgents() {
             </div>
             <div class="agent-actions">
                 <button class="agent-edit-btn" data-edit="${a.id}" title="Modifier">✏️</button>
-                <button class="agent-delete-btn" data-delete="${a.id}" title="Supprimer l'agent">✕</button>
+                <button class="agent-delete-btn" data-delete="${a.id}" title="Supprimer l'agent"></button>
             </div>
         </div>`).join('');
 
@@ -970,8 +989,33 @@ if (memoryAddBtn) memoryAddBtn.onclick = () => {
     const txt = memoryInput.value.trim();
     if (txt) { globalMemories.push({ id: Date.now().toString(), content: txt, created: Date.now() }); saveMemory(); renderMemory(); memoryInput.value=''; setStatus('Souvenir ajouté'); }
 };
-function getRelevantMemories(query, limit=3) {
-    return globalMemories.filter(m => query.toLowerCase().includes(m.content.toLowerCase()) || m.content.toLowerCase().includes(query.toLowerCase())).slice(0, limit);
+
+// ✅ AMÉLIORÉ 7 : scoring par mots significatifs (longueur > 3) au lieu d'inclusion naïve
+function getRelevantMemories(query, limit = 3) {
+    const STOP_WORDS = new Set(['pour','dans','avec','cette','etre','sont','nous','vous','tout','mais','plus','bien','même','aussi','très','peut','comme','faire','avoir','être','sur','par','une','des','les','aux','que','qui','donc','elle','ils','elles','son','ses','leur','leurs','mon','ma','mes','ton','ta','tes']);
+    
+    const queryWords = query.toLowerCase()
+        .replace(/[^a-zàâäéèêëîïôùûüç\s]/gi, ' ')
+        .split(/\s+/)
+        .filter(w => w.length > 3 && !STOP_WORDS.has(w));
+
+    if (!queryWords.length) return [];
+
+    const scored = globalMemories.map(m => {
+        const memWords = m.content.toLowerCase()
+            .replace(/[^a-zàâäéèêëîïôùûüç\s]/gi, ' ')
+            .split(/\s+/)
+            .filter(w => w.length > 3 && !STOP_WORDS.has(w));
+        
+        const commonWords = queryWords.filter(w => memWords.some(mw => mw.includes(w) || w.includes(mw)));
+        return { memory: m, score: commonWords.length };
+    });
+
+    return scored
+        .filter(s => s.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit)
+        .map(s => s.memory);
 }
 
 // =====================================================
@@ -980,29 +1024,39 @@ function getRelevantMemories(query, limit=3) {
 function loadSessions() {
     try { sessions = JSON.parse(localStorage.getItem('dakis_sessions') || '[]'); } catch(e) {}
     if (!sessions.length) {
-        sessions = [{ id: Date.now().toString(), title:"Bienvenue DAKIS", messages:[{role:"assistant",content:"🦊 **DAKIS by XeneX** opérationnel ! Configurez vos clés API dans les paramètres.",timestamp:Date.now()}], createdAt:Date.now() }];
+        sessions = [{ id: Date.now().toString(), title:"Bienvenue DAKIS", messages:[{role:"assistant",content:" **DAKIS by XeneX** opérationnel ! Configurez vos clés API dans les paramètres.",timestamp:Date.now()}], createdAt:Date.now() }];
         saveSessions();
     }
     if (!sessions.find(s=>s.id===currentSessionId)) currentSessionId = sessions[0].id;
     renderHistory(); loadSessionMessages(currentSessionId);
 }
+
+// ✅ AMÉLIORÉ 6 : réduction progressive jusqu'à MAX_SESSIONS_ON_QUOTA au lieu de 3 arbitraire
 function saveSessions() {
     try {
         localStorage.setItem('dakis_sessions', JSON.stringify(sessions));
     } catch(e) {
         if (e.name === 'QuotaExceededError' || e.code === 22) {
-            setStatus('⚠️ Stockage plein ! Supprimez des anciennes discussions.', true);
-            while (sessions.length > 3) {
+            setStatus('⚠️ Stockage saturé — suppression automatique des anciennes discussions.', true);
+            while (sessions.length > MAX_SESSIONS_ON_QUOTA) {
                 sessions.pop();
                 try {
                     localStorage.setItem('dakis_sessions', JSON.stringify(sessions));
-                    setStatus('✅ Anciennes discussions supprimées pour libérer de l\'espace', false);
+                    setStatus(`✅ Historique réduit à ${sessions.length} discussions pour libérer de l'espace.`);
                     return;
                 } catch(e2) {}
+            }
+            sessions = sessions.slice(0, 1);
+            try {
+                localStorage.setItem('dakis_sessions', JSON.stringify(sessions));
+                setStatus('⚠️ Stockage critique : seule la discussion courante est conservée.', true);
+            } catch(e3) {
+                console.error('localStorage totalement plein :', e3);
             }
         }
     }
 }
+
 function saveCurrentMessages(messages) {
     const idx = sessions.findIndex(s=>s.id===currentSessionId);
     if (idx !== -1) {
@@ -1023,9 +1077,9 @@ function renderMessages(messages) {
         div.innerHTML = `<div class="bubble ${msg.role==='user'?'user-bubble':'bot-bubble'}">${msg.role==='user'?escapeHtml(msg.content):marked.parse(msg.content)}</div>
             <div class="msg-actions">
                 ${msg.role==='assistant'?`
-                    <button class="msg-action-btn" onclick="window.copyMessage(${msg.timestamp})">📋 Copier</button>
+                    <button class="msg-action-btn" onclick="window.copyMessage(${msg.timestamp})"> Copier</button>
                     <button class="msg-action-btn" onclick="window.saveToMemory(${msg.timestamp})">🧠 Mémoriser</button>
-                    <button class="msg-action-btn" onclick="window.regenerateMessage(${msg.timestamp})">🔄 Régénérer</button>
+                    <button class="msg-action-btn" onclick="window.regenerateMessage(${msg.timestamp})"> Régénérer</button>
                     <button class="msg-action-btn" onclick="window.exportMessage(${msg.timestamp})">💾 Export</button>
                 `:''}
             </div>
@@ -1042,64 +1096,169 @@ function renderMessages(messages) {
 window.copyMessage = ts => { const msg = sessions.find(s=>s.id===currentSessionId)?.messages.find(m=>m.timestamp===ts); if (msg) { navigator.clipboard.writeText(msg.content); setStatus('Copié !'); } };
 window.saveToMemory = ts => { const msg = sessions.find(s=>s.id===currentSessionId)?.messages.find(m=>m.timestamp===ts); if (msg) { globalMemories.push({id:Date.now().toString(),content:msg.content.substring(0,200),created:Date.now()}); saveMemory(); renderMemory(); setStatus('Mémorisé !'); } };
 
+// ✅ CORRIGÉ 5 : avertissement si contexte de fichiers perdu + nettoyage propre
 window.regenerateMessage = async (ts) => {
     const sess = sessions.find(s=>s.id===currentSessionId);
     if (!sess) return;
     const msgIdx = sess.messages.findIndex(m=>m.timestamp===ts);
     if (msgIdx === -1) return;
-    
+
     let userMsg = '';
+    let hadFiles = false;
     for (let i = msgIdx - 1; i >= 0; i--) {
         if (sess.messages[i].role === 'user') {
             userMsg = sess.messages[i].content;
+            hadFiles = userMsg.includes('📎 [');
             break;
         }
     }
-    
-    if (!userMsg) {
-        setStatus('❌ Pas de message utilisateur trouvé', true);
-        return;
+
+    if (!userMsg) { setStatus('❌ Message source introuvable', true); return; }
+
+    if (hadFiles) {
+        const ok = confirm(
+            '⚠️ Ce message avait des fichiers joints.\n' +
+            'Les fichiers ne sont plus disponibles en mémoire.\n\n' +
+            'La régénération se fera SANS les fichiers.\n' +
+            'Continuer quand même ?'
+        );
+        if (!ok) return;
     }
-    
+
     sess.messages.splice(msgIdx, 1);
-    saveSessions();
+    saveCurrentMessages(sess.messages);
     renderMessages(sess.messages);
-    
-    userInput.value = userMsg;
+
+    const cleanMsg = userMsg.split('\n\n [')[0].trim();
+    userInput.value = cleanMsg;
     handleSend();
 };
 
-window.exportMessage = (ts) => {
+// ✅ CORRIGÉ 3 : export PDF via html2canvas (rendu Markdown réel) + TXT + MD
+window.exportMessage = async (ts) => {
     const msg = sessions.find(s=>s.id===currentSessionId)?.messages.find(m=>m.timestamp===ts);
     if (!msg) return;
-    
-    const format = prompt('Format d\'export ? (1: PDF, 2: TXT, 3: Markdown)', '1');
-    if (!format) return;
-    
-    if (format === '1') {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        doc.text(msg.content, 10, 10);
-        doc.save(`message_${ts}.pdf`);
-    } else if (format === '2') {
-        const blob = new Blob([msg.content], { type: 'text/plain' });
+
+    const formatChoice = await showExportModal();
+    if (!formatChoice) return;
+
+    if (formatChoice === 'pdf') {
+        const container = document.createElement('div');
+        container.style.cssText = `
+            position: fixed; left: -9999px; top: 0;
+            width: 800px; padding: 40px;
+            background: white; color: #1e2a32;
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 14px; line-height: 1.6;
+        `;
+        container.innerHTML = marked.parse(msg.content);
+        document.body.appendChild(container);
+
+        try {
+            setStatus('⏳ Génération PDF...');
+            const canvas = await html2canvas(container, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff'
+            });
+            document.body.removeChild(container);
+
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+            const imgWidth = 210;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            const pageHeight = 297;
+            let position = 0;
+
+            if (imgHeight <= pageHeight) {
+                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight);
+            } else {
+                let remainingHeight = imgHeight;
+                while (remainingHeight > 0) {
+                    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+                    remainingHeight -= pageHeight;
+                    position -= pageHeight;
+                    if (remainingHeight > 0) pdf.addPage();
+                }
+            }
+
+            pdf.save(`dakis_message_${ts}.pdf`);
+            setStatus('✅ PDF exporté');
+        } catch(e) {
+            if (document.body.contains(container)) document.body.removeChild(container);
+            setStatus('❌ Erreur PDF : ' + e.message, true);
+        }
+
+    } else if (formatChoice === 'txt') {
+        const blob = new Blob([msg.content], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `message_${ts}.txt`;
-        a.click();
+        const a = document.createElement('a'); a.href = url; a.download = `dakis_${ts}.txt`; a.click();
         URL.revokeObjectURL(url);
-    } else if (format === '3') {
-        const blob = new Blob([msg.content], { type: 'text/markdown' });
+        setStatus('✅ TXT exporté');
+
+    } else if (formatChoice === 'md') {
+        const blob = new Blob([msg.content], { type: 'text/markdown;charset=utf-8' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `message_${ts}.md`;
-        a.click();
+        const a = document.createElement('a'); a.href = url; a.download = `dakis_${ts}.md`; a.click();
         URL.revokeObjectURL(url);
+        setStatus('✅ Markdown exporté');
     }
-    setStatus('✅ Message exporté');
 };
+
+// ✅ AJOUTÉ : mini-modal export non-bloquante (remplace prompt() archaïque)
+function showExportModal() {
+    return new Promise((resolve) => {
+        document.getElementById('exportModalOverlay')?.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'exportModalOverlay';
+        overlay.style.cssText = `
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 2000;
+        `;
+        overlay.innerHTML = `
+            <div style="background:var(--bg-primary);border:1px solid var(--border-light);
+                        border-radius:16px;padding:24px;width:300px;text-align:center;">
+                <div style="font-weight:700;font-size:1rem;margin-bottom:16px;color:var(--text-primary);">
+                    💾 Choisir le format d'export
+                </div>
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                    <button data-fmt="pdf" style="background:var(--accent);border:none;border-radius:10px;
+                        padding:12px;font-weight:700;color:#1f2e38;cursor:pointer;font-size:0.9rem;">
+                         PDF (mise en page Markdown)
+                    </button>
+                    <button data-fmt="txt" style="background:rgba(0,0,0,0.15);border:1px solid var(--border-light);
+                        border-radius:10px;padding:12px;font-weight:600;color:var(--text-primary);cursor:pointer;font-size:0.9rem;">
+                        📝 Texte brut (.txt)
+                    </button>
+                    <button data-fmt="md" style="background:rgba(0,0,0,0.15);border:1px solid var(--border-light);
+                        border-radius:10px;padding:12px;font-weight:600;color:var(--text-primary);cursor:pointer;font-size:0.9rem;">
+                         Markdown (.md)
+                    </button>
+                    <button data-fmt="cancel" style="background:transparent;border:none;
+                        color:var(--text-primary);opacity:0.5;cursor:pointer;padding:8px;font-size:0.85rem;">
+                        Annuler
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        overlay.querySelectorAll('button[data-fmt]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                overlay.remove();
+                const fmt = btn.dataset.fmt;
+                resolve(fmt === 'cancel' ? null : fmt);
+            });
+        });
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) { overlay.remove(); resolve(null); }
+        });
+    });
+}
 
 function addMessage(role, content) {
     const sess = sessions.find(s=>s.id===currentSessionId);
@@ -1118,7 +1277,7 @@ function renderHistory(filter = '') {
     
     historyListDiv.innerHTML = filteredSessions.map(s =>
         `<div class="history-item ${s.id===currentSessionId?'active':''}" data-id="${s.id}">
-            <div class="history-title"> ${escapeHtml(s.title||'Discussion')}</div>
+            <div class="history-title">🦊 ${escapeHtml(s.title||'Discussion')}</div>
             <div class="history-date">${new Date(s.createdAt).toLocaleDateString()}</div>
             <button class="history-delete-btn" data-delete-session="${s.id}" title="Supprimer cette discussion">✕</button>
         </div>`
@@ -1199,7 +1358,7 @@ async function performOCR(imageDataUrl) {
         {
             logger: m => {
                 if (m.status === 'recognizing text') {
-                    setStatus(` OCR en cours : ${Math.round(m.progress * 100)}%`);
+                    setStatus(`🔍 OCR en cours : ${Math.round(m.progress * 100)}%`);
                 }
             }
         }
@@ -1239,7 +1398,7 @@ async function extractTextFromPDFWithOCR(pdfDataUrl) {
     let fullText = '';
     const numPages = Math.min(pdf.numPages, 5);
     
-    setStatus(` PDF scanné détecté. OCR sur ${numPages} pages max...`);
+    setStatus(`🔍 PDF scanné détecté. OCR sur ${numPages} pages max...`);
     
     for (let i = 1; i <= numPages; i++) {
         const page = await pdf.getPage(i);
@@ -1509,7 +1668,7 @@ Reste dans ce rôle en toutes circonstances. Ne mentionne jamais DAKIS. Réponds
     const body = JSON.stringify({ model, messages, temperature, max_tokens:4000, stream:true });
 
     try {
-        setStatus('⏳ DAKIS réfléchit...');
+        setStatus(' DAKIS réfléchit...');
         const resp = await fetch(conf.baseURL, { method:'POST', headers:conf.headers(apiKey), body });
         if (!resp.ok) { onError(`HTTP ${resp.status}`); return; }
 
@@ -1541,15 +1700,25 @@ Reste dans ce rôle en toutes circonstances. Ne mentionne jamais DAKIS. Réponds
 }
 
 // =====================================================
-// handleSend
+// handleSend — avec verrou anti-double envoi + debounce RAF
 // =====================================================
 async function handleSend() {
+    // ✅ CORRIGÉ 1 : verrou anti-double envoi
+    if (isStreaming) {
+        setStatus('⏳ Réponse en cours, patientez...', true);
+        return;
+    }
+    
     const msg = userInput.value.trim();
     const readyFiles = attachedFiles.filter(f => f.status === 'ready');
     if (!msg && !readyFiles.length) { setStatus('✍️ Écrivez un message', true); return; }
 
     const fileNames = readyFiles.map(f=>f.fileName);
-    const displayMsg = msg + (fileNames.length ? `\n\n📎 [${fileNames.join(', ')}]` : '');
+    // ✅ CORRIGÉ 8 : displayMsg pour historique (noms de fichiers seulement, pas le contenu)
+    const displayMsg = msg + (fileNames.length
+        ? `\n\n📎 [${fileNames.join(', ')}] — contenu traité, non sauvegardé en historique`
+        : '');
+
     addMessage('user', displayMsg);
     userInput.value = '';
     updateCharCounter();
@@ -1581,15 +1750,40 @@ async function handleSend() {
 
     let streamedContent = '';
 
+    // ✅ CORRIGÉ 1 : activation du verrou et désactivation du bouton
+    isStreaming = true;
+    sendButton.disabled = true;
+    sendButton.style.opacity = '0.5';
+    sendButton.textContent = '⏳';
+
+    // ✅ AMÉLIORÉ 2 : rendu Markdown throttlé via requestAnimationFrame
+    let rafPending = false;
+    let latestContent = '';
+
     callAPIStream(
         finalMsg,
         (delta, full) => {
             streamedContent = full;
-            bubbleDiv.innerHTML = marked.parse(full);
-            bubbleDiv.appendChild(cursor);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            latestContent = full;
+            if (!rafPending) {
+                rafPending = true;
+                requestAnimationFrame(() => {
+                    bubbleDiv.innerHTML = marked.parse(latestContent);
+                    bubbleDiv.appendChild(cursor);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    rafPending = false;
+                });
+            }
         },
         (full) => {
+            // ✅ CORRIGÉ 1 : libération du verrou dans onDone
+            isStreaming = false;
+            sendButton.disabled = false;
+            sendButton.style.opacity = '1';
+            sendButton.textContent = 'Envoyer';
+            
+            // ✅ AMÉLIORÉ 2 : rendu final forcé
+            rafPending = false;
             cursor.remove();
             bubbleDiv.innerHTML = marked.parse(full || '...');
             const actionsDiv = document.createElement('div');
@@ -1618,9 +1812,15 @@ async function handleSend() {
             if (hasDoc) showCopyPanel(full);
         },
         (errMsg) => {
+            // ✅ CORRIGÉ 1 : libération du verrou dans onError
+            isStreaming = false;
+            sendButton.disabled = false;
+            sendButton.style.opacity = '1';
+            sendButton.textContent = 'Envoyer';
+            
             cursor.remove();
             bubbleDiv.innerHTML = `<span style="color:#e74c3c;">❌ Erreur API : ${escapeHtml(errMsg)}</span>`;
-            setStatus(`❌ ${errMsg}`, true);
+            setStatus(` ${errMsg}`, true);
         }
     );
 }
@@ -1634,7 +1834,7 @@ function showCopyPanel(content) {
     panel.innerHTML = `
         <div style="font-size:0.8rem;font-weight:600;color:var(--accent);margin-bottom:8px;">📋 Résultat — copiez et collez dans Word</div>
         <textarea class="copy-result-text" readonly>${escapeHtml(content)}</textarea>
-        <button class="copy-clipboard-btn" id="copyToCb">📋 Copier dans le presse-papiers</button>`;
+        <button class="copy-clipboard-btn" id="copyToCb"> Copier dans le presse-papiers</button>`;
     messagesContainer.appendChild(panel);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
@@ -1642,7 +1842,7 @@ function showCopyPanel(content) {
         navigator.clipboard.writeText(content).then(() => {
             this.textContent = '✅ Copié !';
             this.classList.add('copied');
-            setTimeout(() => { this.textContent = ' Copier dans le presse-papiers'; this.classList.remove('copied'); }, 2500);
+            setTimeout(() => { this.textContent = '📋 Copier dans le presse-papiers'; this.classList.remove('copied'); }, 2500);
         }).catch(() => {
             panel.querySelector('.copy-result-text').select();
             setStatus('Sélectionnez le texte et copiez (Ctrl+C)', false);
@@ -1667,7 +1867,7 @@ if (wizardGenerateBtn) {
         
         if (!apiKey) { setStatus('❌ Aucune clé API configurée. Ajoutez au moins une clé dans les paramètres.', true); return; }
         
-        wizardGenerateBtn.disabled = true; wizardGenerateBtn.textContent = ' Génération...';
+        wizardGenerateBtn.disabled = true; wizardGenerateBtn.textContent = '⏳ Génération...';
         try {
             const conf = providersConfig[provider];
             const model = conf.models[0];
@@ -1711,7 +1911,7 @@ if (wizardGenerateBtn) {
 if (focusModeBtn) {
     focusModeBtn.addEventListener('click', () => {
         document.body.classList.toggle('focus-mode');
-        focusModeBtn.textContent = document.body.classList.contains('focus-mode') ? '🖥️ Quitter Focus' : '🖥️ Focus';
+        focusModeBtn.textContent = document.body.classList.contains('focus-mode') ? '🖥️ Quitter Focus' : '️ Focus';
     });
 }
 
@@ -1722,7 +1922,7 @@ document.addEventListener('keydown', (e) => {
     else if (e.key === 'F11') { e.preventDefault(); focusModeBtn.click(); }
     else if (e.key === 'Escape' && document.body.classList.contains('focus-mode')) {
         document.body.classList.remove('focus-mode');
-        focusModeBtn.textContent = '️ Focus';
+        focusModeBtn.textContent = '🖥️ Focus';
     }
 });
 
@@ -1739,11 +1939,11 @@ if (userInput)          userInput.addEventListener('keydown', e => { if (e.key==
 // INIT
 // =====================================================
 loadApiKeys();
-loadAgents(); // ✅ Charge Scribo, Cheikh et Mentor automatiquement
+loadAgents();
 loadMemory();
 loadSessions();
 updateCharCounter();
-setStatus('🦊 DAKIS prêt - Configurez vos clés API gratuites');
+setStatus(' DAKIS prêt - Configurez vos clés API gratuites');
 </script>
 </body>
 </html>
